@@ -36,70 +36,35 @@ classdef labdb < handle
         function user = getUser(obj)
             user = obj.config.user;
         end
-
-        function out = getConnectionInfo(obj)
-        	out = obj.dbconn.ping;
-        end
         
         function execute(obj, sqlstr, args)
             query(obj, sqlstr, args)
         end
-
-        function use(obj, schema)
-			exec(obj.dbconn,sprintf('use %s', sqlstr));
-        end
-
-        function call(obj, sqlstr)
-        	exec(obj.dbconn,sprintf('call %s', sqlstr));
-        end
-
         function out = query(obj, sqlstr, args) 
-        	checkConnection(obj);
 	    	sqlquery = sqlstr;
-            cur = exec(obj.dbconn, sqlquery);
-            if cur.Message
-                % There was an error
-                fprintf(2,'SQL ERROR: %s \n',cur.Message);
-                out = [];
-            else
-                data = fetch(cur);
-                if cur.rows == 0
-                    out = {};
-                else
-                    out = data.Data;
-                end
-            end
+            cur = obj.dbconn.exec(sqlquery);
+            if cur.message
+            data = fetch(cur);
+            out = data.Data;
             close(cur);
            
         end
         
-        function out = saveData(obj, tablename, data, colnames)
-        	checkConnection(obj);
-        	if ~exist(colnames,'var')
-        		if isstruct(data)
-        			colnames = fields(data);
-        		elseif istable(data)
-        			colnames = data.Properties.VariableNames;
-        		else
-        			error('labdb:saveData','Must specify column names if not using table or struct type')
-        		end
-        	end
-
-        	datainsert(obj.dbconn, tablename, colnames, data);
-        	
-		end
-
         function checkConnection(obj)
             if isempty(obj.dbconn)
                 obj.dbconn = database(obj.config.db,obj.config.user,obj.config.passwd,'Vendor','MySQL',...
                 'Server',obj.config.host);
-            elseif ~obj.dbconn.isopen
+            elseif ~conn.isopen
                 obj.dbconn = database(obj.config.db,obj.config.user,obj.config.passwd,'Vendor','MySQL',...
                 'Server',obj.config.host);
             end
         end
         
-               
+        function out = foo(obj)
+            cur = obj.dbconn.exec('explain fac.sensors');
+            out = cur.fetchall();
+        end
+        
     end
 end
 
