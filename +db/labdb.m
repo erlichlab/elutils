@@ -45,10 +45,18 @@ classdef labdb < handle
             query(obj, sqlstr, args)
         end
 
+        function use(obj, schema)
+			exec(obj.dbconn,sprintf('use %s', sqlstr));
+        end
+
+        function call(obj, sqlstr)
+        	exec(obj.dbconn,sprintf('call %s', sqlstr));
+        end
+
         function out = query(obj, sqlstr, args) 
         	checkConnection(obj);
 	    	sqlquery = sqlstr;
-            cur = obj.dbconn.exec(sqlquery);
+            cur = exc(obj.dbconn, sqlquery);
             if cur.Message
                 % There was an error
                 fprintf(2,'SQL ERROR: %s \n',cur.Message);
