@@ -42,15 +42,21 @@ classdef labdb < handle
         end
         
         function execute(obj, sqlstr, args)
-            query(obj, sqlstr, args)
+            checkConnection(obj);
+	    	sqlquery = sqlstr;
+            cur = exec(obj.dbconn, sqlquery);
+            if cur.Message
+                % There was an error
+                fprintf(2,'SQL ERROR: %s \n',cur.Message);
+            end
         end
 
         function use(obj, schema)
-			exec(obj.dbconn,sprintf('use %s', sqlstr));
+			execute(obj,sprintf('use %s', sqlstr));
         end
 
         function call(obj, sqlstr)
-        	exec(obj.dbconn,sprintf('call %s', sqlstr));
+        	execute(obj,sprintf('call %s', sqlstr));
         end
 
         function out = query(obj, sqlstr, args) 
@@ -63,7 +69,7 @@ classdef labdb < handle
                 out = [];
             else
                 data = fetch(cur);
-                if cur.rows == 0
+                if cur.rows <= 0
                     out = {};
                 else
                     out = data.Data;
