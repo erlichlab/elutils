@@ -1,4 +1,4 @@
-classdef labdb < handle
+classdef (Sealed) labdb < handle
     
     
     properties (SetAccess=public,GetAccess=public)
@@ -6,28 +6,16 @@ classdef labdb < handle
         config = [];
     end
     
-    methods
-        function obj = labdb(host, user, passwd, db)
-            if nargin == 0
-                obj.config = readDBconf();
-            elseif naragin == 1
-                obj.config = readDBconf(host);
-            else
-                obj.config.host = host;
-                obj.config.user = user;
-                obj.config.passwd = passwd;
-                if nargin > 3
-                    obj.config.db = db;
-                else
-                    obj.config.db = 'met';
-                end
-                
-                
-            end
-            
-            checkConnection(obj);
-            
+    methods (Access=private)
+        function obj = labdb
         end
+    end
+
+    methods (Access=public)
+
+        function setConfig(obj, config)
+            obj.config = config;
+        end        
         
         function host = getHost(obj)
             host = obj.config.host;
@@ -36,32 +24,32 @@ classdef labdb < handle
         function user = getUser(obj)
             user = obj.config.user;
         end
-
+        
         function out = getConnectionInfo(obj)
-        	out = ping(obj.dbconn);
+            out = ping(obj.dbconn);
         end
         
         function execute(obj, sqlstr, args)
             checkConnection(obj);
-	    	sqlquery = sqlstr;
+            sqlquery = sqlstr;
             cur = exec(obj.dbconn, sqlquery);
             if cur.Message
                 % There was an error
                 fprintf(2,'SQL ERROR: %s \n',cur.Message);
             end
         end
-
+        
         function use(obj, schema)
-			execute(obj,sprintf('use %s', sqlstr));
+            execute(obj,sprintf('use %s', sqlstr));
         end
-
+        
         function call(obj, sqlstr)
-        	execute(obj,sprintf('call %s', sqlstr));
+            execute(obj,sprintf('call %s', sqlstr));
         end
-
-        function out = query(obj, sqlstr, args) 
-        	checkConnection(obj);
-	    	sqlquery = sqlstr;
+        
+        function out = query(obj, sqlstr, args)
+            checkConnection(obj);
+            sqlquery = sqlstr;
             cur = exec(obj.dbconn, sqlquery);
             if cur.Message
                 % There was an error
@@ -76,32 +64,32 @@ classdef labdb < handle
                 end
             end
             close(cur);
-           
+            
         end
         
         function out = saveData(obj, tablename, data, colnames)
-        	checkConnection(obj);
-        	if ~exist(colnames,'var')
-        		if isstruct(data)
-        			colnames = fields(data);
-        		elseif istable(data)
-        			colnames = data.Properties.VariableNames;
-        		else
-        			error('labdb:saveData','Must specify column names if not using table or struct type')
-        		end
-        	end
-
-        	datainsert(obj.dbconn, tablename, colnames, data);
-        	
-		end
-
+            checkConnection(obj);
+            if ~exist(colnames,'var')
+                if isstruct(data)
+                    colnames = fields(data);
+                elseif istable(data)
+                    colnames = data.Properties.VariableNames;
+                else
+                    error('labdb:saveData','Must specify column names if not using table or struct type')
+                end
+            end
+            
+            datainsert(obj.dbconn, tablename, colnames, data);
+            
+        end
+        
         function checkConnection(obj)
             if isempty(obj.dbconn)
                 obj.dbconn = database(obj.config.db,obj.config.user,obj.config.passwd,'Vendor','MySQL',...
-                'Server',obj.config.host);
+                    'Server',obj.config.host);
             elseif ~obj.dbconn.isopen
                 obj.dbconn = database(obj.config.db,obj.config.user,obj.config.passwd,'Vendor','MySQL',...
-                'Server',obj.config.host);
+                    'Server',obj.config.host);
             end
         end
         
@@ -109,7 +97,34 @@ classdef labdb < handle
             close(obj.dbconn);
         end
         
+    end
+    
+    methods (Static)
+        function so = getConnection(varargin)
+            persistent localObj
+            if nargin == 0
+                config = readDBconf();
+            elseif naragin == 1
+                config = readDBconf(varargin{1});
+            else
+                config.host = varargin{1};
+                config.user = varargin{2};
+                config.passwd = varargin{3};
+                if nargin > 3
+                    config.db = varargin{4};
+                else
+                    config.db = 'met';
+                end
                
+            end
+            
+            if isempty(localObj) || ~isvalid(localObj)
+                    localObj = db.labdb;
+                    setConfig(localObj, config)
+                    checkConnection(localObj);
+            end
+            so = localObj;
+        end
     end
 end
 
