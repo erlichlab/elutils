@@ -1,7 +1,7 @@
 classdef labdb < handle
     
     
-    properties (SetAccess=private,GetAccess=private)
+    properties (SetAccess=public,GetAccess=public)
         dbconn = [];
         config = [];
     end
@@ -38,7 +38,7 @@ classdef labdb < handle
         end
 
         function out = getConnectionInfo(obj)
-        	out = obj.dbconn.ping;
+        	out = ping(obj.dbconn);
         end
         
         function execute(obj, sqlstr, args)
@@ -103,6 +103,10 @@ classdef labdb < handle
                 obj.dbconn = database(obj.config.db,obj.config.user,obj.config.passwd,'Vendor','MySQL',...
                 'Server',obj.config.host);
             end
+        end
+        
+        function close(obj)
+            close(obj.dbconn);
         end
         
                
