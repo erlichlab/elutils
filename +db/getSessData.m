@@ -150,8 +150,8 @@ end
 
 function S = combineData(sessout, trialsout, fetch_peh)
 
-if which('fromjson')
-	loadjson = @fromjson;
+if which('utils.fromjson')
+	loadjson = @utils.fromjson;
 end
 	
 tic
