@@ -120,9 +120,10 @@ classdef (Sealed) labdb < handle
             
             if isempty(localObj) || ~isvalid(localObj)
                     localObj = db.labdb;
-                    setConfig(localObj, config)
+                    setConfig(localObj, config);
                     checkConnection(localObj);
             end
+            setConfig(localObj, config);
             so = localObj;
         end
     end
