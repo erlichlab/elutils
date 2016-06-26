@@ -153,8 +153,10 @@ function S = combineData(sessout, trialsout, fetch_peh)
 
 if which('utils.fromjson')
 	ljson = @utils.fromjson;
+    fastjson = true;
 else
     ljson = @loadjson;
+    fastjson = false;
 end
 % This let's people with the faster json code use it while the slow pokes are stuck with the other one.
 
@@ -176,6 +178,9 @@ for sx = 1:numel(S)
     
     for tx = 1:(num_trials-1)
         this_data = ljson(these_json_data{tx});
+        if fastjson
+            this_data=convert2mat(this_data);
+        end
         sessdata(tx) = this_data.data;      
     end
 
@@ -194,6 +199,9 @@ for sx = 1:numel(S)
 	    
 	    for tx = 1:(num_trials-1)
 	        this_data = loadjson(these_json_pe{tx});
+            if fastjson
+                this_data=convert2mat(this_data);
+            end
 	        sessdata(tx) = this_data.parsed_events;      
 	    end
 
@@ -207,6 +215,24 @@ end
 toc
 end
 
+function y = convert2mat(x)
+if isfield(x,'States')
+    try
+    field = fieldnames(x.States);
+    for fx = 1:numel(field)
+        x.States.(field{fx}) = cell2mat(x.States.(field{fx}));
+    end
+        
+        field = fieldnames(x.Events);
+    for fx = 1:numel(field)
+        x.States.(field{fx}) = cell2mat(x.Events.(field{fx}));
+    end    
+catch
+    end
+end
+    
+    
+end
 
 
 
