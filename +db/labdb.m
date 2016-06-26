@@ -101,6 +101,7 @@ classdef (Sealed) labdb < handle
     
     methods (Static)
         function so = getConnection(varargin)
+            setdbprefs('DataReturnFormat','table')
             persistent localObj
             if nargin == 0
                 config = readDBconf();
@@ -155,10 +156,15 @@ while 1
     
     
     if start
-        if numel(tline)==0 || tline(1) == '['
+        if numel(tline)==0 
             % Starting another section.
+            continue
+        end
+
+        if tline(1) == '['
             break
         end
+
         [field, value] = strtok(tline,'=');
         
         cfg.(strtrim(field)) = strtrim(value(2:end));

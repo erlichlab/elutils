@@ -150,9 +150,14 @@ end
 
 function S = combineData(sessout, trialsout, fetch_peh)
 
+
 if which('utils.fromjson')
-	loadjson = @utils.fromjson;
+	ljson = @utils.fromjson;
+else
+    ljson = @loadjson;
 end
+% This let's people with the faster json code use it while the slow pokes are stuck with the other one.
+
 	
 tic
 S = table2struct(sessout);
@@ -162,7 +167,7 @@ for sx = 1:numel(S)
     
     %% First handle the trial data.
     these_json_data = trialsout.data(these_trial_ind);
-    last_data = loadjson(these_json_data{num_trials});
+    last_data = ljson(these_json_data{num_trials});
     clear sessdata
     sessdata(num_trials) = last_data.data;
     sessdata = sessdata(:); 
@@ -170,7 +175,7 @@ for sx = 1:numel(S)
     % save time. And then make sure it is a column vector (e.g. tall).
     
     for tx = 1:(num_trials-1)
-        this_data = loadjson(these_json_data{tx});
+        this_data = ljson(these_json_data{tx});
         sessdata(tx) = this_data.data;      
     end
 
