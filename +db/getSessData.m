@@ -190,7 +190,7 @@ for sx = 1:numel(S)
 
     if fetch_peh
 	    these_json_pe = trialsout.parsed_events(these_trial_ind);
-    	last_data = loadjson(these_json_pe{num_trials});
+    	last_data = ljson(these_json_pe{num_trials});
 	    clear sessdata;
 	    sessdata(num_trials) = last_data.parsed_events;
 	    sessdata = sessdata(:); 
@@ -198,7 +198,7 @@ for sx = 1:numel(S)
 	    % save time. And then make sure it is a column vector (e.g. tall).
 	    
 	    for tx = 1:(num_trials-1)
-	        this_data = loadjson(these_json_pe{tx});
+	        this_data = ljson(these_json_pe{tx});
             if fastjson
                 this_data=convert2mat(this_data);
             end
