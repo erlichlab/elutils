@@ -1,9 +1,13 @@
 classdef (Sealed) labdb < handle
     
     
+    properties (SetAccess=public,GetAccess=protected)
+        config = [];
+        
+    end
+    
     properties (SetAccess=public,GetAccess=public)
         dbconn = [];
-        config = [];
     end
     
     methods (Access=private)
@@ -40,7 +44,7 @@ classdef (Sealed) labdb < handle
         end
         
         function use(obj, schema)
-            execute(obj,sprintf('use %s', sqlstr));
+            execute(obj,sprintf('use %s', schema));
         end
         
         function call(obj, sqlstr)
@@ -91,6 +95,11 @@ classdef (Sealed) labdb < handle
                 obj.dbconn = database(obj.config.db,obj.config.user,obj.config.passwd,'Vendor','MySQL',...
                     'Server',obj.config.host);
             end
+            if ~isempty(obj.dbconn.Message)
+                fprintf(2,'%s\n',obj.dbconn.Message);
+                obj.dbconn = [];
+            end
+                
         end
         
         function close(obj)
@@ -101,10 +110,13 @@ classdef (Sealed) labdb < handle
     
     methods (Static)
         function so = getConnection(varargin)
+            setdbprefs('DataReturnFormat','table')
+            addMysqlConnecterToPath();
+            
             persistent localObj
             if nargin == 0
                 config = readDBconf();
-            elseif naragin == 1
+            elseif nargin == 1
                 config = readDBconf(varargin{1});
             else
                 config.host = varargin{1};
@@ -155,10 +167,15 @@ while 1
     
     
     if start
-        if numel(tline)==0 || tline(1) == '['
+        if numel(tline)==0 
             % Starting another section.
+            continue
+        end
+
+        if tline(1) == '['
             break
         end
+
         [field, value] = strtok(tline,'=');
         
         cfg.(strtrim(field)) = strtrim(value(2:end));
@@ -171,4 +188,17 @@ end
 fclose(fid);
 end
 
+function addMysqlConnecterToPath()
+    jcp = javaclasspath('-all');
+    
+    jarfile = 'mysql-connector-java-5.1.39-bin.jar';
+    
+    if isempty(cell2mat(regexp(jcp,jarfile)))
+        % Mysql is not on the path
+        this_file = mfilename('fullpath');
+        [this_path] = fileparts(this_file);
+        javaaddpath(fullfile(this_path, jarfile));
+    end
+     
+end
 
