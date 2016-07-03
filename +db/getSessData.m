@@ -203,7 +203,7 @@ function x = convert2mat(x)
             for fx = 1:numel(field)
                 tt = x.Events.(field{fx});
                 if iscell(tt)
-                    x.States.(field{fx}) = cell2mat(tt);
+                    x.Events.(field{fx}) = cell2mat(tt);
                 end
             end    
         catch
@@ -219,19 +219,21 @@ function x = convert2mat(x)
                 % matlab thinks 0 is an int64
             end
             tt = cell2mat([tt{:}]');
-        elseif ischar(tt)
-            if ~strcmpi(tt,'_nan__nan_')
-                
-                fprintf(1,'Cannot handle %s',tt);
-                warning('getSessData:reccell2mat','Converted string to [NaN NaN]')
-            end
-            tt = [nan nan];
+       
         else
         % this is the case where there was only one entry into the state.
             if fx == 1
                 tt{1} = 0;
             end
         tt = cell2mat(tt');
+        if ischar(tt)
+            if ~strcmpi(tt,'_nan__nan_')
+                
+                fprintf(1,'Cannot handle %s',tt);
+                warning('getSessData:reccell2mat','Converted string to [NaN NaN]')
+            end
+            tt = [nan nan];
         end
-    end
-end % convert2mat
+        end
+    end    
+    end % convert2mat
