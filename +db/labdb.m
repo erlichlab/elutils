@@ -71,9 +71,10 @@ classdef (Sealed) labdb < handle
             
         end
         
-        function out = saveData(obj, tablename, data, colnames)
+        function out = saveData(obj, tablename, data, varargin)
+         % saveData(obj, tablename, data, colnames)
             checkConnection(obj);
-            if ~exist(colnames,'var')
+            if nargin < 4
                 if isstruct(data)
                     colnames = fields(data);
                 elseif istable(data)
