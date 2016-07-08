@@ -14,11 +14,7 @@ function out = mloads(jstr, varargin)
         jstr = char(utils.zlibdecode(jstr));
     end
 
-    if which('json.fromjson')
-        bigJ = json.fromjson(jstr);
-    else
-        bigJ = loadjson('',jstr);
-    end
+    bigJ = json.fromjson(jstr);
 
     out = bigJ.vals;
     meta = bigJ.info;

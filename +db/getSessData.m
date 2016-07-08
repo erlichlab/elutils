@@ -144,14 +144,7 @@ end
 
 function S = combineData(sessout, trialsout, fetch_peh)
 
-
-    if which('utils.fromjson')
-        ljson = @utils.fromjson;
-        fastjson = true;
-    else
-        ljson = @loadjson;
-        fastjson = false;
-    end
+    
 % This let's people with the faster json code use it while the slow pokes are stuck with the other one.
 
     S = table2struct(sessout);
@@ -165,7 +158,7 @@ function S = combineData(sessout, trialsout, fetch_peh)
         % By going backwards we allocate memory for the struct at once to
         % save time.
         for tx = num_trials:-1:1
-            this_data = ljson(these_json_data{tx});
+            this_data = json.loads(these_json_data{tx});
             sessdata(tx) = this_data.data;      
         end
 
@@ -179,10 +172,8 @@ function S = combineData(sessout, trialsout, fetch_peh)
             % By going backwards we allocate memory for the struct at once to
             % save time. 
             for tx = num_trials:-1:1
-                this_data = ljson(these_json_pe{tx});
-                if fastjson
-                    this_data.parsed_events=convert2mat(this_data.parsed_events);
-                end
+                this_data = json.loads(these_json_pe{tx});
+                
                 sessdata(tx) = this_data.parsed_events;      
             end
             S(sx).peh = sessdata(:);
@@ -191,49 +182,4 @@ function S = combineData(sessout, trialsout, fetch_peh)
 
 end
 
-function x = convert2mat(x)
-    if isfield(x,'States')
-        try
-            field = fieldnames(x.States);
-            for fx = 1:numel(field)
-                x.States.(field{fx}) = reccell2mat(x.States.(field{fx}));
-            end
 
-            field = fieldnames(x.Events);
-            for fx = 1:numel(field)
-                tt = x.Events.(field{fx});
-                if iscell(tt)
-                    x.Events.(field{fx}) = cell2mat(tt);
-                end
-            end    
-        catch
-        end
-    end
-
-
-    function tt = reccell2mat(tt)
-
-        if iscell(tt{1})
-            if fx == 1
-                tt{1}{1} = 0;
-                % matlab thinks 0 is an int64
-            end
-            tt = cell2mat([tt{:}]');
-       
-        else
-        % this is the case where there was only one entry into the state.
-            if fx == 1
-                tt{1} = 0;
-            end
-        tt = cell2mat(tt');
-        if ischar(tt)
-            if ~strcmpi(tt,'_nan__nan_')
-                
-                fprintf(1,'Cannot handle %s',tt);
-                warning('getSessData:reccell2mat','Converted string to [NaN NaN]')
-            end
-            tt = [nan nan];
-        end
-        end
-    end    
-    end % convert2mat

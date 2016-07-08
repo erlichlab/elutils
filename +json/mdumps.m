@@ -18,11 +18,7 @@ end
 TO.vals = obj;
 TO.info = meta;
 
-if which('json.tojson')
-    out = json.tojson(TO);
-else
-    out = savejson('',TO);
-end
+out = json.tojson(TO);
 
 if compress
     out = utils.zlibencode(out);
