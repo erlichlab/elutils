@@ -158,8 +158,8 @@ function S = combineData(sessout, trialsout, fetch_peh)
         % By going backwards we allocate memory for the struct at once to
         % save time.
         for tx = num_trials:-1:1
-            this_data = json.loads(these_json_data{tx});
-            sessdata(tx) = this_data.data;      
+            this_data = json.mloads(these_json_data{tx});
+            sessdata(tx) = this_data;      
         end
 
         S(sx).data = sessdata(:);
@@ -172,9 +172,9 @@ function S = combineData(sessout, trialsout, fetch_peh)
             % By going backwards we allocate memory for the struct at once to
             % save time. 
             for tx = num_trials:-1:1
-                this_data = json.loads(these_json_pe{tx});
+                this_data = json.mloads(these_json_pe{tx});
                 
-                sessdata(tx) = this_data.parsed_events;      
+                sessdata(tx) = this_data;      
             end
             S(sx).peh = sessdata(:);
         end

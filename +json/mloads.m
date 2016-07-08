@@ -35,12 +35,15 @@ function vals = applyinfo(vals, meta)
                 vals{cx} = applyinfo(vals{cx}, meta.cell__{cx});
             end
             vals = reshape(vals, tsize);
-        otherwise
-            if tnumel > 1 && ~ischar(vals)
-                vals = cell2mat(vals);
+            otherwise
+            f = @(x) cast(x, meta.type__);
+            if tnumel == 1 || strcmp(meta.type__, 'char')
+                vals = f(vals);
+            else
+                 vals = cellfun(f, vals);
+              %  vals = cell2mat(vals);
+                 vals = reshape(vals, tsize);
             end
-            vals = cast(vals, meta.type__);
-            vals = reshape(vals, tsize);
         end
     else
         fnames = fieldnames(meta);
