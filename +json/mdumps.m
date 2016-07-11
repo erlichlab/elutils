@@ -3,6 +3,7 @@ function out = mdumps(obj, varargin)
 % function that takes a matlab object (cell array, struct, vector) and converts it into json. 
 % It also creates a "sister" json object that describes the type and dimension of the "leaf" elements.  
 % Warning: Simple cell arrays (e.g. cell-arrays of strings or scalar numbers) are supported. However, cell arrays of more complex types (cell-arrays, structs, matrices)
+% Note: complex numbers should be converted into 2-vectors 
 
 compress = true; 
 thorough = true;
