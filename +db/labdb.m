@@ -97,8 +97,15 @@ classdef (Sealed) labdb < handle
                     'Server',obj.config.host);
             end
             if ~isempty(obj.dbconn.Message)
-                fprintf(2,'%s\n',obj.dbconn.Message);
-                obj.dbconn = [];
+                if strfind(obj.dbconn.Message,'wait_timeout')
+                    obj.dbconn = [];
+                    obj.checkConnection()
+                else
+                    fprintf(2,'%s\n',obj.dbconn.Message);
+                    obj.dbconn = [];
+                end
+
+
             end
                 
         end
