@@ -33,7 +33,7 @@ classdef (Sealed) labdb < handle
             out = ping(obj.dbconn);
         end
         
-        function execute(obj, sqlstr, args)
+        function cur = execute(obj, sqlstr, args)
             checkConnection(obj);
             sqlquery = sqlstr;
             cur = exec(obj.dbconn, sqlquery);
@@ -44,7 +44,10 @@ classdef (Sealed) labdb < handle
         end
         
         function use(obj, schema)
-            execute(obj,sprintf('use %s', schema));
+            cur = execute(obj,sprintf('use %s', schema));
+            if cur.Message
+                error('Failed to switch schemas')
+            end
         end
         
         function call(obj, sqlstr)
