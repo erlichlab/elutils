@@ -59,6 +59,13 @@ classdef (Sealed) labdb < handle
             out = out.id;
         end
 
+        function out = get(obj, sqlstr)
+        % if you are trying to get some numbers from the database 
+        % and you want to get the value rather than a table, use this function.
+        %  
+            out = query(obj,sqlstr);
+            out = out.(out.Properties.VariableNames{1});
+        end
 
         
         function call(obj, sqlstr)
