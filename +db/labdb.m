@@ -59,12 +59,14 @@ classdef (Sealed) labdb < handle
             out = out.id;
         end
 
-        function out = get(obj, sqlstr)
+        function varargout = get(obj, sqlstr)
         % if you are trying to get some numbers from the database 
         % and you want to get the value rather than a table, use this function.
         %  
             out = query(obj,sqlstr);
-            out = out.(out.Properties.VariableNames{1});
+            for vx = 1:nargout
+                varargout{vx} = out.(out.Properties.VariableNames{vx});
+            end
         end
 
         
@@ -142,11 +144,30 @@ classdef (Sealed) labdb < handle
             setdbprefs('DataReturnFormat','table')
             addMysqlConnecterToPath();
             
-            persistent localObj
-            if nargin == 0
-                config = readDBconf();
-            elseif nargin == 1
-                config = readDBconf(varargin{1});
+            persistent localObj;
+
+            if nargin == 1
+                configsec = varargin{1};
+            else
+                configsec = utils.inputordefault('config','client',varargin);
+            end
+
+            % Check if we have a connection with the right name.
+
+            try
+                so = localObj.(configsec);
+                return;
+            catch ME
+                if ~strcmp(ME.identifier, {'MATLAB:nonExistentField', 'MATLAB:structRefFromNonStruct'})
+                    rethrow(ME)
+                end 
+            end
+
+            % No connection exists
+            localObj.(configsec) = [];
+
+            if nargin < 3
+                config = readDBconf(configsec);
             else
                 config.host = varargin{1};
                 config.user = varargin{2};
@@ -159,13 +180,12 @@ classdef (Sealed) labdb < handle
                
             end
             
-            if isempty(localObj) || ~isvalid(localObj)
-                    localObj = db.labdb;
-                    setConfig(localObj, config);
-                    checkConnection(localObj);
-            end
-            setConfig(localObj, config);
-            so = localObj;
+
+
+            localObj.(configsec) = db.labdb;
+            setConfig(localObj.(configsec), config);
+            checkConnection(localObj.(configsec));
+            so = localObj.(configsec);
         end
     end
 end
