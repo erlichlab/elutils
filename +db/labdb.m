@@ -49,6 +49,17 @@ classdef (Sealed) labdb < handle
                 error('Failed to switch schemas')
             end
         end
+
+        function out = explain(obj, table)
+            out = query(obj,sprintf('explain %s', table));
+        end
+
+        function out = last_insert_id(obj)
+            out = query(obj,'select last_insert_id() as id');
+            out = out.id;
+        end
+
+
         
         function call(obj, sqlstr)
             execute(obj,sprintf('call %s', sqlstr));
