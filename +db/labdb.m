@@ -64,8 +64,12 @@ classdef (Sealed) labdb < handle
         % and you want to get the value rather than a table, use this function.
         %  
             out = query(obj,sqlstr);
-            for vx = 1:nargout
-                varargout{vx} = out.(out.Properties.VariableNames{vx});
+            if isempty(out)
+                varargout = cell(1,nargout);
+            else
+                for vx = 1:nargout
+                    varargout{vx} = out.(out.Properties.VariableNames{vx});
+                end
             end
         end
 
