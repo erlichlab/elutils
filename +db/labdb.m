@@ -67,7 +67,7 @@ classdef (Sealed) labdb < handle
                 args = {};
             end
             
-            out = query(obj,sqlstr,args{:});
+            out = query(obj,sqlstr,args);
             
 
             if isempty(out)

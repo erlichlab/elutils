@@ -2,13 +2,19 @@ function out = mloads(jstr, varargin)
 % out = mdumps(obj, ['compress'])
 % function that takes a matlab object (cell array, struct, vector) and converts it into json. 
 % It also creates a "sister" json object that describes the type and dimension of the "leaf" elements.  
+    
+    if isempty(jstr)
+        out = {};
+        return;
+    end
+
     if ischar(jstr)
         decompress = false;
     else
         decompress = true;
     end
 
-    utils.overridedefaults(who, varargin);
+    decompress = utils.inputordefault('decompress',decompress,varargin);
 
     if decompress
         jstr = char(utils.zlibdecode(jstr));
