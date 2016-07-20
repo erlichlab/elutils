@@ -35,7 +35,7 @@ classdef (Sealed) labdb < handle
         
         function cur = execute(obj, sqlstr, args)
             checkConnection(obj);
-            sqlquery = sqlstr;
+            sqlquery = sprintf(sqlstr, args{:});
             cur = exec(obj.dbconn, sqlquery);
             if cur.Message
                 % There was an error
@@ -59,11 +59,17 @@ classdef (Sealed) labdb < handle
             out = out.id;
         end
 
-        function varargout = get(obj, sqlstr)
+        function varargout = get(obj, sqlstr, args)
         % if you are trying to get some numbers from the database 
         % and you want to get the value rather than a table, use this function.
-        %  
-            out = query(obj,sqlstr);
+            
+            if nargin < 3
+                args = {};
+            end
+            
+            out = query(obj,sqlstr,args{:});
+            
+
             if isempty(out)
                 varargout = cell(1,nargout);
             else
@@ -79,8 +85,15 @@ classdef (Sealed) labdb < handle
         end
         
         function out = query(obj, sqlstr, args)
+            
             checkConnection(obj);
-            sqlquery = sqlstr;
+            
+            if nargin < 3
+                args = {};
+            end
+            
+            
+            sqlquery = sprintf(sqlstr, args{:});
             cur = exec(obj.dbconn, sqlquery);
             if cur.Message
                 % There was an error
