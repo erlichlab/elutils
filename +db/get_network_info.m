@@ -4,7 +4,8 @@ ip = '0.0.0.0'; mac='0000000000'; hostname='unknown';  % Default values in case 
 import java.net.*;
 try
     % This gets the info as seen by the outside world
-    userstr=bdata('select user()');
+    dbc = db.labdb.getConnection();
+    userstr=dbc.get('select user()');
     userstr=userstr{1};
     atx=find(userstr=='@');
     hostn=userstr(atx+1:end);
@@ -19,29 +20,27 @@ end
 try
     
     keeps=zeros(size(IA));
-    pton_add=keeps;
     for ix=1:numel(IA)
         if strfind(class(IA(ix)),'4') % this is an IPv4 address
             ip=char(IA(ix).getHostAddress);
-            if ip(1)=='0' || isequal(ip,'127.0.0.1') || || isequal(ip,'127.0.1.1') % ignore localhost and microsoft tv/video connector
+            if ip(1)=='0' || isequal(ip,'127.0.0.1') || isequal(ip,'127.0.1.1') % ignore localhost and microsoft tv/video connector
                 keeps(ix)=0;
             else
                 keeps(ix)=1;
-                if isequal(ip(1:7),'128.112')
-                    pton_add(ix)=1;
-                end
             end
         end
     end
     
     
-    if sum(pton_add)==1
-        good_IA=find(pton_add==1);
-    elseif sum(keeps)==1;
+    if sum(keeps)==1;
         good_IA=find(keeps==1);
     elseif sum(keeps)>1
         warning('Not sure what my IP address is');
         good_IA=find(keeps==1,1,'first');
+    else
+        'Could not find any IP'
+        [ip,mac,hostname] = deal([]);
+        return
     end
         
     
