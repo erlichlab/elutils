@@ -23,7 +23,7 @@ try
     for ix=1:numel(IA)
         if strfind(class(IA(ix)),'4') % this is an IPv4 address
             ip=char(IA(ix).getHostAddress);
-            if ip(1)=='0' || isequal(ip,'127.0.0.1') % ignore localhost and microsoft tv/video connector
+            if ip(1)=='0' || isequal(ip,'127.0.0.1') || || isequal(ip,'127.0.1.1') % ignore localhost and microsoft tv/video connector
                 keeps(ix)=0;
             else
                 keeps(ix)=1;
