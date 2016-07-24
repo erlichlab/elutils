@@ -5,7 +5,7 @@ function [out, inps] = inputordefault(keyname, defval, inps)
  % input if it finds it otherwise assignes it to the default value.
  % E.g. sessid = inputordefault('sessid', 0, varargin)
 
- ind = strcmp(keyname, inps(1:2:end));
+ ind = strcmpi(keyname, inps(1:2:end));
  % is the keyname in the inputs? Look only at the odd elements of inps, since this keyname could be a value of another input.
  if any(ind)
  	out = inps{2*find(ind)};
