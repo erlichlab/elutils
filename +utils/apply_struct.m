@@ -1,4 +1,10 @@
 function S = apply_struct(S, newS)
+% S = apply_struct(S, newS)
+% Give a "parent struct" and then apply a new struct that
+% overwrites matching elements of the old struct and adds 
+% elements missing from the old struct.
+% see also diff_struct
+
 
 if iscell(newS)
 	for cx = 1:numel(newS)
