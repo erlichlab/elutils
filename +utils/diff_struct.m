@@ -6,21 +6,27 @@ function diffS = diff_struct(oldS, newS)
 % see also diff_struct
 
 
-if iscell(newS)
-	for cx = 1:numel(newS)
-		S = utils.apply_struct(S, newS{cx});
-	end
-else
-	fname = fieldnames(newS);
-    oldfname = fieldnames(S);
+diffS = struct();
+fname = fieldnames(newS);
+oldfname = fieldnames(oldS);
+if ~isequaln(oldS, newS)
 	for fx = 1:numel(fname)
-		if isstruct(newS.(fname{fx}))
-            if ~any(strcmp(fname{fx}, oldfname))
-                S.(fname{fx}) = struct();
-            end
-			S.(fname{fx}) = utils.apply_struct(S.(fname{fx}), newS.(fname{fx}));
-		else
-			S.(fname{fx}) = newS.(fname{fx});
+		thisfield = fname{fx};
+		if ~any(strcmp(thisfield,oldfname))
+			% This is a new field
+			diffS.(thisfield) = newS.(thisfield);
+		elseif ~isequaln(newS.(thisfield), oldS.(thisfield))
+			% They are not equal
+			if numel(newS.(thisfield))==1
+				if isstruct(newS.(thisfield))
+					diffS.(thisfield) = utils.diff_struct(oldS.(thisfield), newS.(thisfield));
+				else
+					diffS.(thisfield) = newS.(thisfield);
+				end
+			else
+
 		end
 	end
-end
+
+
+
