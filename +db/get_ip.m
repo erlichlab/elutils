@@ -2,21 +2,27 @@ function ip = get_ip()
 
 %% 
 if ispc
-[r,p]=system('ipconfig /all')
+    [r,p]=system('ipconfig /all')
+elseif ismac
+    [r,p] = system('ifconfig');
+    ind = strfind(p,'inet ');
+    indshift = 5;
 else
-    [r,p] = system('ifconfig')
+    [r,p] = system('ifconfig');
+    ind = strfind(p,'inet addr:');
+    indshift = 10;
 end
 %%
-ind = strfind(p,'inet ');
 ipind = 1;
 for ix = 1:numel(ind)
-    thisip = strtrim(strtok(p(ind(ix)+5:ind(ix)+20),' '));
+    thisip = strtrim(strtok(p(ind(ix)+indshift:ind(ix)+indshift+15),' '));
     if ~strcmp(thisip, {'127.0.0.1','127.0.1.1'})
-        IP(ipind) = thisip;
+        IP{ipind} = thisip;
     end
 end
 
-if numel(IP)==1
-    ip = IP{1};
-else 
-    
+if numel(IP)>1
+    fprintf(2,'GOt multiple IPs returning first');
+end
+
+ip = IP{1};
