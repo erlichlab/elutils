@@ -7,7 +7,7 @@ if min(size(data))>1
 end
 
 
-ent_type = utils.inputordefault('ent_type','shannon',varargin);
+ent_type = utils.inputordefault('ent_type','renyi',varargin);
 alpha = utils.inputordefault('alpha',5,varargin);
 
 
