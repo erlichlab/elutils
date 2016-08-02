@@ -41,7 +41,7 @@ end
 
 %% parse inputs
 use_sessid=0;
-if isnumeric(varargin{1})
+if nargin==1 && isnumeric(varargin{1})
 	% Case 1, we've got a vector of sessids
 	sessid=varargin{1};
     sessid=sessid(~isnan(sessid));
@@ -91,10 +91,11 @@ if ~use_sessid
     for dx=1:numel(dates)
         datestr=sprintf('%s , "%s"', datestr, dates{dx});
     end
+    datestr = datestr(3:end);
     % Use the datestr for a select ... where sessiondate in (datestr) type sql command to get all the relevant sessions.
-    sqlquery = sprintf('select sessid from beh.sessions b, met.subjects m where m.subjid=b.subjid and subjname=%d and sessiondate in ( %s ) order by sessiondate',subjname, datestr(2:end));
+    sqlquery = sprintf('select distinct(a.sessid) from beh.sessions a, beh.trials b where a.sessid=b.sessid and subjid=%d and sessiondate in ( %s ) order by sessiondate',subjname, datestr(2:end));
     sqlout = dbc.query(sqlquery);
-    sessid = slqout.sessid;
+    sessid = sqlout.sessid;
     
 end
 
@@ -116,7 +117,7 @@ else
     trialsout = dbc.query(sqlquery);
 end
 
-sqlquery = sprintf('select sessid, sessiondate, starttime, hostip, protocol from beh.sessions where sessid in ( %s ) order by sessid', sessstr);
+sqlquery = sprintf('select sessid, sessiondate, starttime, hostip, rigid, protocol from beh.sessions where sessid in ( %s ) order by sessid', sessstr);
 sessout = dbc.query(sqlquery);
 
 % Combine the data from the sessions table with data from the trials table.

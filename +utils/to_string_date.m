@@ -36,10 +36,8 @@
 
 function [str] = to_string_date(din, varargin)
 
-format = [];
-pairs = { ...
-  'format'   'dashes'  ; ...
-}; parseargs(varargin, pairs);
+format = utils.inputordefault('format','dashes',varargin);
+
 
 if ischar(din), str = din; return; end;
 
