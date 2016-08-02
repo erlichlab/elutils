@@ -5,6 +5,11 @@ function out = mdumps(obj, varargin)
 % Warning: Simple cell arrays (e.g. cell-arrays of strings or scalar numbers) are supported. However, cell arrays of more complex types (cell-arrays, structs, matrices)
 % Note: complex numbers should be converted into 2-vectors 
 
+if isempty(obj)
+    out = [];
+    return;
+end
+
 compress = true; 
 thorough = true;
 
