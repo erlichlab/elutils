@@ -17,16 +17,19 @@ if ~isequaln(oldS, newS)
 			diffS.(thisfield) = newS.(thisfield);
 		elseif ~isequaln(newS.(thisfield), oldS.(thisfield))
 			% They are not equal
-			if numel(newS.(thisfield))==1
-				if isstruct(newS.(thisfield))
+				if isstruct(newS.(thisfield)) && numel(newS.(thisfield))==1
 					diffS.(thisfield) = utils.diff_struct(oldS.(thisfield), newS.(thisfield));
+				elseif isstruct(newS.(thisfield)) % numel > 1
+					error('Cannot diff struct arrays.')
 				else
 					diffS.(thisfield) = newS.(thisfield);
 				end
 			else
-
+				
+			end
 		end
 	end
+end
 
 
 

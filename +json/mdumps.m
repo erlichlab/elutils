@@ -38,11 +38,16 @@ function [M, S] = get_info_flatten(S)
     if isnumeric(S) || ischar(S) || islogical(S) || iscell(S)
         [M.type__, M.dim__] = getleafinfo(S);
         S = S(:);
-    elseif isstruct(S)
+    elseif isstruct(S) && numel(S)==1
         fnames = fieldnames(S);
         for fx = 1:numel(fnames)
             [M.(fnames{fx}), S.(fnames{fx})] = get_info_flatten(S.(fnames{fx}));
         end
+    elseif isstruct(S) % and numel is > 1, this is a struct array
+        [M.type__, M.dim__] = getleafinfo(S);
+        S = arrayfun(@(x){x},S); % Convert to cell array of struct
+        S = S(:);
+
     else
         [M.type__, M.dim__] = getleafinfo(S);
         error('json:mdumps','Do not know how to handle data of type %s', M.type)
@@ -54,13 +59,16 @@ function [M, S] = get_info_flatten_thorough(S)
     if isnumeric(S) || ischar(S) || islogical(S) 
         [M.type__, M.dim__] = getleafinfo(S);
         S = S(:);
-    elseif isstruct(S)
+    elseif isstruct(S) && numel(S)==1
         fnames = fieldnames(S);
         for fx = 1:numel(fnames)
             [M.(fnames{fx}), S.(fnames{fx})] = get_info_flatten_thorough(S.(fnames{fx}));
         end
-    elseif iscell(S)
+    elseif iscell(S) || isstruct(S)
         [M.type__, M.dim__] = getleafinfo(S);
+        if isstruct(S)
+            S = arrayfun(@(x){x},S);
+        end
         S = S(:);
         for cx = 1:numel(S)
             [M.cell__{cx}, S{cx}] =  get_info_flatten_thorough(S{cx});

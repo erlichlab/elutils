@@ -36,12 +36,16 @@ function vals = applyinfo(vals, meta)
         tsize = cell2mat(meta.dim__)';
         tnumel = prod(tsize);
         switch(meta.type__)
-        case 'cell'
+        case {'cell', 'struct'}
             for cx = 1:tnumel
                 vals{cx} = applyinfo(vals{cx}, meta.cell__{cx});
             end
+            if strcmp(meta.type__, 'struct') % This is a struct array
+                vals = [vals{:}];
+            end
             vals = reshape(vals, tsize);
-            otherwise
+            
+        otherwise
             f = @(x) cast(x, meta.type__);
             if tnumel == 1 || strcmp(meta.type__, 'char')
                 vals = f(vals);
@@ -50,6 +54,7 @@ function vals = applyinfo(vals, meta)
               %  vals = cell2mat(vals);
                  vals = reshape(vals, tsize);
             end
+
         end
     else
         fnames = fieldnames(meta);

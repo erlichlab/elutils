@@ -20,7 +20,7 @@ end
 sqlS.ip = db.get_ip();
 sqlS.message = err.message;
 sqlS.identifier = err.identifier;
-tmp = json.mdumps({err.stack(:)},'compress',false);
+tmp = json.mdumps(err.stack,'compress',false);
 % We can't handle struct arrays at this time convert to cell array of structs.	
 
 if ~isempty(tmp)
