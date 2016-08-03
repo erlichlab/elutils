@@ -35,7 +35,7 @@ classdef (Sealed) labdb < handle
         
         function cur = execute(obj, sqlstr, args)
             if nargin<3
-                args = {}
+                args = {};
             end
             checkConnection(obj);
             sqlquery = sprintf(sqlstr, args{:});
