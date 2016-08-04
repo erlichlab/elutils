@@ -13,6 +13,7 @@ caltab = dbc.query('select valve, volume, duration, calts from met.water_calibra
 
 if isempty(caltab)
 	calstruct = [];
+	return;
 end
 
 valve = unique(caltab.valve);
