@@ -11,6 +11,10 @@ end
 dbc = db.labdb.getConnection();
 caltab = dbc.query('select valve, volume, duration, calts from met.water_calibration where valid = 1 and rigid = %d',{rigid});
 
+if isempty(caltab)
+	calstruct = [];
+end
+
 valve = unique(caltab.valve);
 
 for vx = 1:numel(valve)
