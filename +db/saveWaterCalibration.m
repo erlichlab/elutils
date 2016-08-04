@@ -8,7 +8,7 @@ rigid = db.getRigID();
 if isempty(rigid) || rigid==0
 	frprintf(1,'This is not a real rig, not saving to DB\n')
 	result = 1;
-    return;
+	return;
 end
 
 for vx = 1:nvalves
@@ -18,7 +18,8 @@ for vx = 1:nvalves
 		sqlS(calind).valve = vx;
 		sqlS(calind).duration = thistab(cx,1)/1000; % Use seconds in the DB.
 		sqlS(calind).volume = thistab(cx,2); % In microliters
-        calind = calind + 1;
+		sqlS(calind).valid = 1;
+		calind = calind + 1;
 	end
 end
 

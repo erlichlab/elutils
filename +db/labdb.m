@@ -127,7 +127,7 @@ classdef (Sealed) labdb < handle
                 end
             end
             
-            datainsert(obj.dbconn, tablename, colnames, data);
+            datainsert(obj.dbconn, tablename, colnames, struct2table(data));
             
         end
         
