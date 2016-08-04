@@ -1,13 +1,13 @@
-function calstruct = loadWaterCalibration()
+function calstruct = loadWaterCalibration(rigid)
 
-
-rigid = db.getRigID();
-if isempty(rigid) || rigid==0
-	fprintf(1,'This is not a real rig, no calibration info on DB\n');
-	calstruct = [];
-	return;
+if nargin == 0 
+    rigid = db.getRigID();
+    if isempty(rigid) || rigid==0
+        fprintf(1,'This is not a real rig, no calibration info on DB\n');
+        calstruct = [];
+        return;
+    end
 end
-
 dbc = db.labdb.getConnection();
 caltab = dbc.query('select valve, volume, duration, calts from met.water_calibration where valid = 1 and rigid = %d',{rigid});
 
