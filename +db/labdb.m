@@ -100,12 +100,6 @@ classdef (Sealed) labdb < handle
             cur = exec(obj.dbconn, sqlquery);
             if cur.Message
                 % There was an error
-                 if strfind(obj.dbconn.Message,'wait_timeout')
-                    obj.dbconn = [];
-                    obj.checkConnection()
-                    out = obj.query(sqlstr,args);
-                    return;
-                 end
                 fprintf(2,'SQL ERROR: %s \n',cur.Message);
                 out = [];
             else
@@ -145,6 +139,17 @@ classdef (Sealed) labdb < handle
                 obj.dbconn = database(obj.config.db,obj.config.user,obj.config.passwd,'Vendor','MySQL',...
                     'Server',obj.config.host);
             end
+            
+            try
+                getId(obj.dbconn.Handle);
+            catch
+                obj.dbconn = [];
+                obj.checkConnection();
+            end
+
+                
+                
+            
             if ~isempty(obj.dbconn.Message)
                 if strfind(obj.dbconn.Message,'wait_timeout')
                     obj.dbconn = [];
