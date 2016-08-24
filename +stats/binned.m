@@ -28,7 +28,7 @@ n_bins=10;
 clr='k';
 func=@nanmean;
 
-overridedefaults(who,varargin);
+utils.overridedefaults(who,varargin);
 x=x(:);
 y=y(:);
 ytob=nan+y;

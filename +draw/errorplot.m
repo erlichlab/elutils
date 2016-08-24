@@ -42,12 +42,12 @@ else
 end
 
 
-pairs={'LineStyle','none';...
-	   'Marker','.';...
-	   'Color', 'k';...
-       'LineWidth',1};
+LineStyle = 'none';
+Marker = 'o';
+Color='k'; 
+LineWidth=1;
    
-parseargs(varargin, pairs);
+utils.overridedefaults(who, varargin);
 
 
 
