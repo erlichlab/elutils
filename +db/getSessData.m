@@ -117,7 +117,7 @@ else
     trialsout = dbc.query(sqlquery);
 end
 
-sqlquery = sprintf('select sessid, sessiondate, starttime, hostip, rigid, protocol from beh.sessions where sessid in ( %s ) order by sessid', sessstr);
+sqlquery = sprintf('select sessid, sessiondate, starttime, hostip, rigid, protocol, subjid from beh.sessions where sessid in ( %s ) order by sessid', sessstr);
 sessout = dbc.query(sqlquery);
 
 % Combine the data from the sessions table with data from the trials table.

@@ -140,6 +140,17 @@ classdef (Sealed) labdb < handle
                 obj.dbconn = database(obj.config.db,obj.config.user,obj.config.passwd,'Vendor','MySQL',...
                     'Server',obj.config.host);
             end
+            
+            try
+                getId(obj.dbconn.Handle);
+            catch
+                obj.dbconn = [];
+                obj.checkConnection();
+            end
+
+                
+                
+            
             if ~isempty(obj.dbconn.Message)
                 if strfind(obj.dbconn.Message,'wait_timeout')
                     obj.dbconn = [];
