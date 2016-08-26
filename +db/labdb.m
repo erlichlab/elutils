@@ -120,6 +120,7 @@ classdef (Sealed) labdb < handle
             if nargin < 4
                 if isstruct(data)
                     colnames = fields(data);
+                    data = struct2table(data,'AsArray',true)
                 elseif istable(data)
                     colnames = data.Properties.VariableNames;
                 else
@@ -127,7 +128,7 @@ classdef (Sealed) labdb < handle
                 end
             end
             
-            datainsert(obj.dbconn, tablename, colnames, struct2table(data));
+            datainsert(obj.dbconn, tablename, colnames, data);
             
         end
         
