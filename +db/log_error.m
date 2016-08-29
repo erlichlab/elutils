@@ -2,6 +2,7 @@ function log_error(err, varargin)
 % log_error(err,['force_save',false])
 % logs an error to the errors table
 
+sessid = utils.inputordefault('sessid', 0, varargin);
 force_save = utils.inputordefault('force_save', false, varargin);
 
 if nargin == 0
@@ -20,6 +21,12 @@ end
 sqlS.ip = db.get_ip();
 sqlS.message = err.message;
 sqlS.identifier = err.identifier;
+
+if sessid>0
+	sqlS.sessid = sessid;
+end
+
+
 tmp = json.mdumps(err.stack,'compress',false);
 % We can't handle struct arrays at this time convert to cell array of structs.	
 
