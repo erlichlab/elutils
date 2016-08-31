@@ -33,7 +33,7 @@ function vals = applyinfo(vals, meta)
     
     if isfield(meta,'type__')
         % Then we are a leaf node
-        tsize = cell2mat(meta.dim__)';
+        tsize =double([meta.dim__{1} meta.dim__{2}]);
         tnumel = prod(tsize);
         switch(meta.type__)
         case {'cell', 'struct'}
@@ -45,6 +45,15 @@ function vals = applyinfo(vals, meta)
             end
             vals = reshape(vals, tsize);
             
+        case 'char'
+            vals = char(vals);
+        case 'double'
+            if tnumel == 1
+                vals = double(vals);
+            else
+                vals = double([vals{:}]);
+                vals = reshape(vals, tsize);
+            end
         otherwise
             f = @(x) cast(x, meta.type__);
             if tnumel == 1 || strcmp(meta.type__, 'char')
