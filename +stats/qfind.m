@@ -11,7 +11,7 @@ for i=1:length(ts)
         y=nan;
     else
     high = length(x);
-    low = -1;
+    low = 0;
     if t>=x(end)
         y=length(x);
     else
@@ -34,3 +34,4 @@ for i=1:length(ts)
     
     ys(i)=y;
 end
+

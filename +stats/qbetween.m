@@ -14,14 +14,14 @@ end
 
 if numel(start)>1
 	for sx=1:numel(start)
-		[y{sx} xi{sx}]=qbetween(x,start(sx), finish(sx), refs(sx));
+		[y{sx} xi{sx}]=stats.qbetween(x,start(sx), finish(sx), refs(sx));
 	end
 else
 	if isempty(x) || (x(end)<start) || x(1)>finish || isnan(start) || isnan(finish)
 		y=[]; xi=[];
 		return
 	end
-	i=qfind(x, [start finish]);
+	i=stats.qfind(x, [start finish]);
 	
 	%qfind returns -1 if the target is less than min(x), since we are
 	%getting 'between', we just take the first relevant x
