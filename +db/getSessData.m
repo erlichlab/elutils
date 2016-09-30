@@ -93,7 +93,7 @@ if ~use_sessid
     end
     datestr = datestr(3:end);
     % Use the datestr for a select ... where sessiondate in (datestr) type sql command to get all the relevant sessions.
-    sqlquery = sprintf('select distinct(a.sessid) from beh.sessions a, beh.trials b where a.sessid=b.sessid and subjid=%d and sessiondate in ( %s ) order by sessiondate',subjname, datestr(2:end));
+    sqlquery = sprintf('select distinct(a.sessid) from beh.sessions a, beh.trials b where a.sessid=b.sessid and a.subjid=%d and sessiondate in ( %s ) order by sessiondate',subjname, datestr(2:end));
     sqlout = dbc.query(sqlquery);
     sessid = sqlout.sessid;
     
