@@ -54,12 +54,14 @@
 % Then in the workspace I call:
 %   foo(100,'a',1,'b',2)
 %
-% This will overide the values of a and b to be 1 and 2.
+% This will override the values of a and b to be 1 and 2.
 %
-% Note that the arguments to parseargs may be in any order-- the
+% Note that the arguments to `foo` may be in any order-- the
 % only ordering restriction is that whatever immediately follows
-% pair names (e.g. 'blob') will be interpreted as the value to be
-% assigned to them (e.g. 'blob' takes on the value 'fuff!');
+% pair names (e.g. 'a') will be interpreted as the value to be
+% assigned to them (e.g. 'a' takes on the value 1);
+%
+% We encourage the use of utils.inputordefault over this function.
 %
 
 

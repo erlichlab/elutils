@@ -1,33 +1,39 @@
 function [offset,inc_t,x,y]=align_psth(ev, ts,varargin)
-% [offset, inc_t,x,y]=align_psth(ev, ts, varargin)
-% 'pre'        3;...
-% 	'post'       3;...
-% 	'binsz'      0.001;...
-% 	'meanflg'    0;...
-% 	'krn'        0.25;...
-%     'pre_mask', -inf;...
-%     'post_mask',+inf;...
-%     'max_offset' 1;...
-%     'do_plot'  false;...
-%     'max_iter' 50;...
-%     'var_thres' 0.05;...
-%     'mark_this', [];...
-%     'save_plot' '';...
+% [offset, inc_t,x,y]=align_psth(ev, ts, [key, val])
+%
+% Inputs:
+% ------
+% ev        A list of the time in each trial (relative to session start) of a reference event (in seconds). E.g. Time of stimulus presentation.
+% ts        Times (in seconds relative to session start) of spikes (or any point-process of interest)
+%
+% Optional Inputs (=default value)
+%
+%
+% pre=       3;       % Include 3 seconds before the reference event
+% post=      3;       % Include 3 seconds after the reference event
+% binsz=     0.001;   % 1 ms bin size
+% krn=       0.15;    % Use a Normal smoothing kernel of 150 ms
+% pre_mask= -inf;     % This can be a scalar or vector of times relative to the reference event. 
+%                     %   Data before this time gets converted to NaN 
+% post_mask=+inf;     % Like pre_mask but to mask end of trial 
+% max_offset=1;       % How far can each trial be shifted from mean PSTH.
+% do_plot= false;     % Plot? Useful for debugging and checking whether fits work.
+% max_iter=50;        % Maximum iterations (if var_thres is not reached).
+% var_thres=0.05;     % If the difference in the variation of the mean PSTH is less than this fraction
+%                     %   then end.
+% mark_this= [];      % A list of times (relative to ev) to mark on the plots. (e.g. a go cue)
+% save_plot='';       % if you want to save the process to a eps, add a name here.
+%
+% Outputs
+% -------
+% offset        A double vector (same length as ev) with the relative time offsets of each trial.
+% inc_t         A logical vector (same length as ev) which is false
+% x             The time axis of the PSTH (e.g. -pre:binsz:post)
+% y             A matrix [ev rows and same columns as x] of the aligned trials.
 
-pairs={'pre'        3;...
-    'post'       3;...
-    'binsz'      0.001;...
-    'meanflg'    0;...
-    'krn'        0.15;...
-    'pre_mask', -inf;...
-    'post_mask',+inf;...
-    'max_offset' 1;...
-    'do_plot'  false;...
-    'max_iter' 50;...
-    'var_thres' 0.05;...
-    'mark_this', [];...
-    'save_plot' '';...
-    }; parseargs(varargin,pairs,{},1);
+
+
+utils.overridedefaults(who,varargin);
 
 
 
@@ -47,6 +53,7 @@ elseif numel(post_mask)~=numel(ev)
 end
 
 if isscalar(krn)
+    % If krn is scalar then create a smoothing kernel that is Normal with S.D. krn.
     dx=ceil(5*krn);
     kx=-dx:binsz:dx;
     krn=normpdf(kx,0, krn);
@@ -67,13 +74,13 @@ inc_t=ones(size(ev))==1;
 inc_t(isnan(ev))=false;
 %% Calculate the mean and ci of the
 while ~done
-    [y,x]=spike_filter(ev+offset,ts,krn,'pre',pre,'post',post,'kernel_bin_size',binsz);
+    [y,x]=stats.spike_filter(ev+offset,ts,krn,'pre',pre,'post',post,'kernel_bin_size',binsz);
     
     % xcorr doesn't handle nans well, i think. so this was commented out. -jce
     % [y x]=maskraster(x,y,pre_mask(ref),post_mask(ref));
     
     ymn = nanmean(y(inc_t,:));
-    yst = nanstderr(y(inc_t,:));
+    yst = stats.nanstderr(y(inc_t,:));
     if cnt==1
         maxy=2*max(ymn);  % this is used to set the ylim for the plot
     end
@@ -127,6 +134,7 @@ while ~done
     
     new_var=sum(nanvar(y));
     var_diff=(old_var-new_var)/old_var;
+
     if do_plot
         fprintf('Variance improved by %2.3g %% of total variance\n',100*var_diff);
     end

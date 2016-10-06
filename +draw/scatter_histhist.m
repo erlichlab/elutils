@@ -1,12 +1,26 @@
 
 
-function [hm, hx, hy]=scatter_histhist2(x, x_sig, y,y_sig, x_lim, y_lim)
+function [hm, hx, hy]=scatter_histhist(x, x_sig, y,y_sig, x_lim, y_lim, varargin)
 % [hm, hx, hy]=scatter_histhist(x, x_sig, y,y_sig, x_lim, y_lim)
+% Optional arguments:
+% width, hist_height, num_bins, x_label, y_label
+%
+% E.g
+% x = randn(150,1)*2;
+% y = randn(250,1)*4+3;
+% y = randn(150,1)*4+3;
+% xsig = abs(x)>2;
+% ysig = y<0;
+% draw.scatter_histhist(x,xsig,y,ysig,'x_label','X','y_label','Y')
 
-org=0.15;
-wdth=0.5;
-hist_h=0.2;
-num_bns=17;
+
+iod = @utils.inputordefault;
+org=iod('org',0.15, varargin);
+wdth=iod('width',0.5,varargin);
+hist_h=iod('hist_height',0.2,varargin);
+num_bns=iod('num_bins',17,varargin);
+x_label=iod('x_label','',varargin);
+y_label=iod('y_label','',varargin);
 
 	x_lim_b=[min(x)-0.1 max(x)+0.1];
 	y_lim_b=[min(y)-0.1 max(y)+0.1];
@@ -35,7 +49,7 @@ marker_size(x_sig+y_sig==2)=36;
 % make the scatter plot
 
 scatter(hm,x, y, 36,'k');
-xlabel(hm,'Pro Trials (r)');
+xlabel(hm,'');
 ylabel(hm,'Anti Trials (r)');
 xlim(hm,x_lim);
 ylim(hm,y_lim);

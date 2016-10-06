@@ -26,11 +26,12 @@ function [y x] = spike_filter(ref, ts, kernel, varargin)
 %
 % Vetted by B. Brunton and J. Erlich 2009/10/5
 
-pairs = {'kernel_bin_size'			5e-4	; ...
-    'pre'						2		; ...
-    'post'						3		; ...
-    'normalize_krn'             1       ; ...
-    }; parseargs(varargin, pairs);
+kernel_bin_size=5e-4	; 
+pre=			2		; 
+post=			3		; 
+normalize_krn=          1       ; 
+
+utils.overridedefaults(who, varargin)
 
 if normalize_krn
     kernel = kernel/sum(abs(kernel))/kernel_bin_size; % normalize
@@ -47,7 +48,7 @@ for rx = 1:length(ref),
         start = ref(rx) - buffered_pre;
         fin   = ref(rx) + post;
         
-        spks = qbetween(ts, start, fin) - ref(rx); % spike times relative to ref
+        spks = stats.qbetween(ts, start, fin) - ref(rx); % spike times relative to ref
         
         if ~isempty(spks),
             ty = histc(spks,x);
