@@ -53,7 +53,7 @@ for i = 1:numel(ref),
         times=[];
         s=[];
     else
-    [times s] = qbetween2(cdtimes, starting, ending);
+    [times s] = stats.qbetween2(cdtimes, starting, ending);
     end
     if isempty(times),
         ys(i,:) = NaN * ones(size(xs));

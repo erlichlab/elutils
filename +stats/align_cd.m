@@ -13,49 +13,49 @@ function [offset,inc_t,x,y]=align_cd(ev, ts,val,varargin)
 %     'max_peak' 1e10;...
 %      
 
-pairs={'pre'        3;...
-	'post'       3;...
-	'binsz'      0.005;...
-    'pre_mask', -inf;...
-    'post_mask',+inf;...
-    'max_offset' 1;...
-    'do_plot'  false;...
-    'max_iter' 50;...
-    'max_peak' [];...
-    'var_thres' 0.05;...
-	}; parseargs(varargin,pairs,{},1);
+pre =        3;
+post =       3;
+binsz =      0.005;
+% pre_mask =  -inf;
+% post_mask = +inf;
+max_offset = 1;
+do_plot =  false;
+max_iter = 50;
+max_peak = [];
+var_thres = 0.05;
+
+utils.overridedefaults(who,varargin)
+
+% The masking is not currently implemented because xcorr cannot handle Nan.
+% if isscalar(pre_mask)
+%     pre_mask=zeros(1,numel(ev))+pre_mask;
+% elseif numel(pre_mask)~=numel(ev)
+%     fprintf(1,'numel(pre_mask) must equal num ref events or be scalar');
+%     return;
+% end    
 
 
-
-if isscalar(pre_mask)
-    pre_mask=zeros(1,numel(ev))+pre_mask;
-elseif numel(pre_mask)~=numel(ev)
-    fprintf(1,'numel(pre_mask) must equal num ref events or be scalar');
-    return;
-end    
-
-
-if isscalar(post_mask)
-    post_mask=zeros(1,numel(ev))+post_mask;
-elseif numel(post_mask)~=numel(ev)
-    fprintf(1,'numel(post_mask) must equal num ref events or be scalar');
-    return;
-end
+% if isscalar(post_mask)
+%     post_mask=zeros(1,numel(ev))+post_mask;
+% elseif numel(post_mask)~=numel(ev)
+%     fprintf(1,'numel(post_mask) must equal num ref events or be scalar');
+%     return;
+% end
 
 
 old_var=10e10;
-    done=0;
-    offset=zeros(size(ev));
-    if do_plot
+done=0;
+offset=zeros(size(ev));
+if do_plot
     clf;ax=axes;
     hold on;
-    end
-    cnt=1;
-    inc_t=ones(size(ev))==1;
+end
+cnt=1;
+inc_t=ones(size(ev))==1;
         
 	%% Calculate the mean and ci of the
 while ~done
-    [y,x]=cdraster(ev+offset,ts(:),val(:),pre,post,binsz);
+    [y,x]=stats.cdraster(ev+offset,ts(:),val(:),pre,post,binsz);
     if cnt==1 && ~isempty(max_peak)
             thresh=prctile(y(:),max_peak);
     else
@@ -67,22 +67,22 @@ while ~done
     % [y x]=maskraster(x,y,pre_mask(ref),post_mask(ref));
     
 	ymn = nanmean(y(inc_t,:));
-    yst = nanstderr(y(inc_t,:));
+    yst = stats.nanstderr(y(inc_t,:));
     
     if do_plot
-    plot(ax,x,ymn-yst,x,ymn+yst,'Color',[1-0.2*cnt, 0 ,0]);
-    drawnow
+        plot(ax,x,ymn-yst,x,ymn+yst,'Color',[1-0.2*cnt, 0 ,0]);
+        drawnow
     end   
     
     for tx=1:numel(ev);
         if inc_t(tx)
           
-        [xcy,xcx]=xcorr(y(tx,:)-nanmean(y(tx,:)),ymn-nanmean(ymn));
-        [v,peakx]=max(xcy);
-        offset(tx)=offset(tx)+xcx(peakx)*binsz;
-        if abs(offset(tx))>max_offset
-            inc_t(tx)=false;
-        end
+            [xcy,xcx]=xcorr(y(tx,:)-nanmean(y(tx,:)),ymn-nanmean(ymn));
+            [v,peakx]=max(xcy);
+            offset(tx)=offset(tx)+xcx(peakx)*binsz;
+            if abs(offset(tx))>max_offset
+                inc_t(tx)=false;
+            end
         end
     end
     

@@ -20,22 +20,22 @@ function [offset,inc_t,x,y]=align_hv(ev,ts,val,varargin)
 % 	}; parseargs(varargin,pairs,{},1);
 % %
 
-pairs={'pre'        3;...
-    'post'       3;...
-    'binsz'      0.001;...
-    'pre_mask', -inf;...
-    'post_mask',+inf;...
-    'max_offset' 1;...
-    'do_plot'  false;...
-    'max_iter' 100;...
-    'max_peak' 1000;...
-    'var_thres' 0.05;...
-    'save_plot' '';...
-    'col_axis'  [-50 500];...
-    'col_map'   jet;...
-    'mark_this',[];...
-    }; parseargs(varargin,pairs,{},1);
+    pre =        3;
+    post =       3;
+    binsz =      0.001;
+    % pre_mask =  -inf;
+    % post_mask = +inf;
+    max_offset = 1;
+    do_plot =  false;
+    max_iter = 100;
+    max_peak = 1000;
+    var_thres = 0.05;
+    save_plot =  ''; 
+    col_axis =  [-50 500];
+    col_map =   jet;
+    mark_this = [];
 
+utils.overridedefaults(who, varargin);
 
 
 old_var=10e10;
@@ -51,7 +51,7 @@ cnt=1;
 inc_t=ones(size(ev))==1;
 %% Calculate the mean and ci of the
 while ~done
-    [y,x]=cdraster(ev+offset,ts(:),val(:),pre,post,binsz);
+    [y,x]=stats.cdraster(ev+offset,ts(:),val(:),pre,post,binsz);
     y(isnan(y))=0;
     [rowi,coli]=find(abs(y)>max_peak);
     inc_t(unique(rowi))=false;
@@ -100,7 +100,7 @@ cla(ax(1));
 cla(ax(2));
 
 ymn = nanmean(y(inc_t,:));
-yst = nanstderr(y(inc_t,:));
+yst = stats.nanstderr(y(inc_t,:));
 if mean(mean(y))<0
     iy=-y;
 else

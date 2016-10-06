@@ -12,7 +12,7 @@ if isempty(x) || (x(end)<start) || x(1)>finish || finish <=start
 	return
 end
 
-i=qfind(x, [start finish]);
+i=stats.qfind(x, [start finish]);
 
 %qfind returns -1 if the target is less than min(x), since we are
 %getting 'between', we just take the first relevant x
@@ -20,7 +20,7 @@ i=qfind(x, [start finish]);
 if i(1)==i(2)
 	y=[];
 	return
-elseif i(1)==-1
+elseif i(1)==0
 	i(1)=1;
 end
 
