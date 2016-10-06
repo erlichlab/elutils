@@ -30,8 +30,31 @@ function [offset,inc_t,x,y]=align_psth(ev, ts,varargin)
 % inc_t         A logical vector (same length as ev) which is false
 % x             The time axis of the PSTH (e.g. -pre:binsz:post)
 % y             A matrix [ev rows and same columns as x] of the aligned trials.
+%
+% Example:
+%
+% ev = (1:30)*5;  
+% ts = [];
+% for i=1:29
+%   ts = [ts; i*5 + normrnd(1+rand*2,0.4,[100,1])]
+% end
+% ts=sort(ts)
+% [offset,inct, ax,ay] = stats.align_psth(ev,ts,'pre',0,'krn',0.1,'do_plot',true);
 
-
+pre=       3;       % Include 3 seconds before the reference event
+post=      3;       % Include 3 seconds after the reference event
+binsz=     0.001;   % 1 ms bin size
+krn=       0.15;    % Use a Normal smoothing kernel of 150 ms
+pre_mask= -inf;     % This can be a scalar or vector of times relative to the reference event. 
+                    %   Data before this time gets converted to NaN 
+post_mask=+inf;     % Like pre_mask but to mask end of trial 
+max_offset=1;       % How far can each trial be shifted from mean PSTH.
+do_plot= false;     % Plot? Useful for debugging and checking whether fits work.
+max_iter=50;        % Maximum iterations (if var_thres is not reached).
+var_thres=0.05;     % If the difference in the variation of the mean PSTH is less than this fraction
+                    %   then end.
+mark_this= [];      % A list of times (relative to ev) to mark on the plots. (e.g. a go cue)
+save_plot='';       % if you want to save the process to a eps, add a name here.
 
 utils.overridedefaults(who,varargin);
 

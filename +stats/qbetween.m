@@ -29,7 +29,7 @@ else
 	if i(1)>i(2)
 		y=[]; xi=[];
 		return
-	elseif i(1)==-1
+	elseif i(1)==0
 		i(1)=1;
 	end
 	
