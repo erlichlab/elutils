@@ -6,9 +6,15 @@ classdef (Sealed) labdb < handle
         
     end
     
+    properties (SetAccess=private,GetAccess=private)
+        try_num = 0;
+        
+    end
+    
     properties (SetAccess=public,GetAccess=public)
         dbconn = [];
     end
+    
     
     methods (Access=private)
         function obj = labdb
@@ -133,6 +139,12 @@ classdef (Sealed) labdb < handle
         end
         
         function checkConnection(obj)
+             if obj.try_num<10
+                    obj.try_num =  obj.try_num + 1;
+             else
+                 fprintf(2,'Failed to connect after 10 attempts\n');
+                 return;
+             end
             if isempty(obj.dbconn)
                 obj.dbconn = database(obj.config.db,obj.config.user,obj.config.passwd,'Vendor','MySQL',...
                     'Server',obj.config.host);
@@ -162,7 +174,7 @@ classdef (Sealed) labdb < handle
 
 
             end
-                
+            obj.try_num = 0;    
         end
         
         function close(obj)
