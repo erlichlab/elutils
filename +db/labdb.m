@@ -8,6 +8,8 @@ classdef (Sealed) labdb < handle
     
     properties (SetAccess=private,GetAccess=private)
         try_num = 0;
+        last_conn_time = clock;
+        wait_timeout;
         
     end
     
@@ -145,12 +147,19 @@ classdef (Sealed) labdb < handle
                  fprintf(2,'Failed to connect after 10 attempts\n');
                  return;
              end
-            if isempty(obj.dbconn)
+            
+            if etime(clock, obj.last_conn_time) > obj.wait_timeout
+                obj.close();
+            else
+                obj.last_conn_time = clock;
+            end
+            
+
+            if isempty(obj.dbconn) || ~obj.dbconn.isopen
                 obj.dbconn = database(obj.config.db,obj.config.user,obj.config.passwd,'Vendor','MySQL',...
                     'Server',obj.config.host);
-            elseif ~obj.dbconn.isopen
-                obj.dbconn = database(obj.config.db,obj.config.user,obj.config.passwd,'Vendor','MySQL',...
-                    'Server',obj.config.host);
+                tmp = obj.query('show variables like "wait_timeout"');
+                obj.wait_timeout = str2double(tmp.VARIABLE_VALUE{1})*0.5;
             end
             
             try
@@ -179,6 +188,7 @@ classdef (Sealed) labdb < handle
         
         function close(obj)
             close(obj.dbconn);
+            obj.dbconn = [];
         end
         
     end
