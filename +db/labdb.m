@@ -148,11 +148,11 @@ classdef (Sealed) labdb < handle
                  return;
              end
             
-            if etime(clock, obj.last_conn_time) > obj.wait_timeout
-                obj.close();
-            else
-                obj.last_conn_time = clock;
-            end
+%             if etime(clock, obj.last_conn_time) > obj.wait_timeout
+%                 obj.close();
+%             else
+%                 obj.last_conn_time = clock;
+%             end
             
 
             if isempty(obj.dbconn) || ~obj.dbconn.isopen
