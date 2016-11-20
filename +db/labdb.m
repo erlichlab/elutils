@@ -3,20 +3,11 @@ classdef (Sealed) labdb < handle
     
     properties (SetAccess=public,GetAccess=protected)
         config = [];
-        
-    end
-    
-    properties (SetAccess=private,GetAccess=private)
-        try_num = 0;
-        last_conn_time = clock;
-        wait_timeout;
-        
     end
     
     properties (SetAccess=public,GetAccess=public)
         dbconn = [];
     end
-    
     
     methods (Access=private)
         function obj = labdb
@@ -77,17 +68,16 @@ classdef (Sealed) labdb < handle
             if nargin < 3
                 args = {};
             end
-            
             out = query(obj,sqlstr,args);
-            
-
+            varargout = cell(1,nargout);
             if isempty(out)
-                varargout = cell(1,nargout);
-            else
-                for vx = 1:nargout
-                    varargout{vx} = out.(out.Properties.VariableNames{vx});
-                end
+                return;
             end
+                
+            for vx = 1:nargout
+                varargout{vx} = out.(out.Properties.VariableNames{vx});
+            end
+
         end
 
         
@@ -122,7 +112,7 @@ classdef (Sealed) labdb < handle
             
         end
         
-        function out = saveData(obj, tablename, data, varargin)
+        function saveData(obj, tablename, data, varargin)
          % saveData(obj, tablename, data, colnames)
             checkConnection(obj);
             if nargin < 4
@@ -141,49 +131,28 @@ classdef (Sealed) labdb < handle
         end
         
         function checkConnection(obj)
-             if obj.try_num<10
-                    obj.try_num =  obj.try_num + 1;
-             else
-                 fprintf(2,'Failed to connect after 10 attempts\n');
-                 return;
-             end
+             
+
             
-%             if etime(clock, obj.last_conn_time) > obj.wait_timeout
-%                 obj.close();
-%             else
-%                 obj.last_conn_time = clock;
-%             end
-            
+
+            try
+                getId(obj.dbconn.Handle);
+                cur = obj.dbconn.exec('select 1 from dual');
+                assert(isempty(cur.Message));
+            catch
+                obj.dbconn = [];
+            end
 
             if isempty(obj.dbconn) || ~obj.dbconn.isopen
                 obj.dbconn = database(obj.config.db,obj.config.user,obj.config.passwd,'Vendor','MySQL',...
                     'Server',obj.config.host);
-                tmp = obj.query('show variables like "wait_timeout"');
-                obj.wait_timeout = str2double(tmp.VARIABLE_VALUE{1})*0.5;
             end
             
-            try
-                getId(obj.dbconn.Handle);
-            catch
-                obj.dbconn = [];
-                obj.checkConnection();
-            end
-
-                
-                
             
             if ~isempty(obj.dbconn.Message)
-                if strfind(obj.dbconn.Message,'wait_timeout')
-                    obj.dbconn = [];
-                    obj.checkConnection()
-                else
                     fprintf(2,'%s\n',obj.dbconn.Message);
                     obj.dbconn = [];
-                end
-
-
             end
-            obj.try_num = 0;    
         end
         
         function close(obj)

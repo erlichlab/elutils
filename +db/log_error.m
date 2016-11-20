@@ -4,6 +4,7 @@ function log_error(err, varargin)
 
 sessid = utils.inputordefault('sessid', 0, varargin);
 force_save = utils.inputordefault('force_save', false, varargin);
+caught = utils.inputordefault('caught',0, varargin);
 
 if nargin == 0
 	err = lasterror();
@@ -21,6 +22,7 @@ end
 sqlS.ip = db.get_ip();
 sqlS.message = err.message;
 sqlS.identifier = err.identifier;
+sqlS.caught = caught;
 
 if sessid>0
 	sqlS.sessid = sessid;
