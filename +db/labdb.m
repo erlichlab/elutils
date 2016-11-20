@@ -7,6 +7,7 @@ classdef (Sealed) labdb < handle
     
     properties (SetAccess=public,GetAccess=public)
         dbconn = [];
+        autocheck = true;% Normally this class checks for DB connectivity before queries. If you are running many you can skip the autocheck.
     end
     
     methods (Access=private)
@@ -36,7 +37,9 @@ classdef (Sealed) labdb < handle
             if nargin<3
                 args = {};
             end
-            checkConnection(obj);
+            if obj.autocheck 
+                checkConnection(obj);
+            end
             sqlquery = sprintf(sqlstr, args{:});
             cur = exec(obj.dbconn, sqlquery);
             if cur.Message
@@ -87,12 +90,13 @@ classdef (Sealed) labdb < handle
         
         function out = query(obj, sqlstr, args)
             
-            checkConnection(obj);
+            if obj.autocheck 
+                checkConnection(obj);
+            end
             
             if nargin < 3
                 args = {};
             end
-            
             
             sqlquery = sprintf(sqlstr, args{:});
             cur = exec(obj.dbconn, sqlquery);
@@ -114,7 +118,9 @@ classdef (Sealed) labdb < handle
         
         function saveData(obj, tablename, data, varargin)
          % saveData(obj, tablename, data, colnames)
-            checkConnection(obj);
+            if obj.autocheck
+                checkConnection(obj);
+            end
             if nargin < 4
                 if isstruct(data)
                     colnames = fields(data);

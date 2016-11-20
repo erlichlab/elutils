@@ -10,7 +10,7 @@ if isempty(obj)
     return;
 end
 
-compress = true; 
+compress = false; 
 thorough = true;
 
 utils.overridedefaults(who, varargin);
