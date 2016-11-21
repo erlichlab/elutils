@@ -6,6 +6,8 @@ sessid = utils.inputordefault('sessid', 0, varargin);
 force_save = utils.inputordefault('force_save', false, varargin);
 caught = utils.inputordefault('caught',0, varargin);
 comment = utils.inputordefault('comment',[],varargin);
+notify = utils.inputordefault('notify',false,varargin);
+
 if nargin == 0
 	err = lasterror();
 end
@@ -44,3 +46,21 @@ end
 dbc = db.labdb.getConnection();
 
 dbc.saveData('met.error_log', sqlS);
+
+if notify
+	try
+		errmsg = utils.showerror(err);
+		message = sprintf('### Error in Rig %d \n ```\n %s \n```',sqlS.rigid, errmsg);
+		net.sendmattermost('#lab-notifications',message);
+        message = sprintf('Error in *Rig %d* \n ```\n %s \n```',sqlS.rigid, errmsg);
+        net.sendslack(message);
+
+	catch me
+		fprintf(2,'Failed to notify')
+
+	end
+
+end
+
+
+    
