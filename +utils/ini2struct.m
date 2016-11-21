@@ -5,6 +5,9 @@ function Struct = ini2struct(FileName)
 % Based on init2struct.m by Andriy Nych
 % 2014/02/01
 
+
+genvarname = @matlab.lang.makeValidName;
+
 f = fopen(FileName,'r');                    % open file
 while ~feof(f)                              % and read until it ends
     s = strtrim(fgetl(f));                  % remove leading/trailing spaces
