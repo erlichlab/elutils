@@ -50,11 +50,17 @@ dbc.saveData('met.error_log', sqlS);
 if notify
 	try
 		errmsg = utils.showerror(err);
+	if sessid == 0
 		message = sprintf('### Error in Rig %d \n ```\n %s \n```',sqlS.rigid, errmsg);
 		net.sendmattermost('#lab-notifications',message);
         message = sprintf('Error in *Rig %d* \n ```\n %s \n```',sqlS.rigid, errmsg);
         net.sendslack(message);
-
+    else
+    	message = sprintf('### Error in Rig %d Session %d \n ```\n %s \n```',sqlS.rigid, sessid, errmsg);
+		net.sendmattermost('#lab-notifications',message);
+        message = sprintf('Error in *Rig %d Session %d*\n ```\n %s \n```',sqlS.rigid, sessid, errmsg);
+        net.sendslack(message);
+    end
 	catch me
 		fprintf(2,'Failed to notify')
 
