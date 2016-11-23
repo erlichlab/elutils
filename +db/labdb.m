@@ -136,6 +136,17 @@ classdef (Sealed) labdb < handle
             
         end
         
+        function ok = isopen(obj)
+            try
+                cur = obj.dbconn.exec('select 1 from dual');
+                assert(isempty(cur.Message));
+                ok = true;
+            catch me
+                ok = false;
+            end
+            
+        end
+        
         function checkConnection(obj)
              
 
