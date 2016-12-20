@@ -25,10 +25,12 @@ if ~isequaln(oldS, newS)
 					diffS.(thisfield) = newS.(thisfield);
 				end
 			else
-				
+				% nothing here?
 			end
 		end
-	end
+else
+    diffS = [];
+end
 end
 
 
