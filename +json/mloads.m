@@ -9,7 +9,10 @@ function out = mloads(jstr, varargin)
     end
 
     if ischar(jstr)
+        decompress = false;    
+    elseif char(jstr(1))=='{'
         decompress = false;
+        jstr = char(jstr(:))';
     else
         decompress = true;
     end
