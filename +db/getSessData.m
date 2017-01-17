@@ -158,7 +158,7 @@ function S = combineData(sessout, trialsout, fetch_peh)
         clear sessdata
         % By going backwards we allocate memory for the struct at once to
         % save time.
-        if num_trials>1
+        if num_trials>0
         for tx = num_trials:-1:1
             this_data = json.mloads(these_json_data{tx});
             sessdata(tx) = this_data;      
