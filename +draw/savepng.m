@@ -15,7 +15,7 @@ function savepng(fighandle,fname,varargin)
 
 
 if nargin==0
-	eval('help savepng');
+	help('draw.savepng');
 	return;
 end
 
