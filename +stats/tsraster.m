@@ -15,13 +15,12 @@ function [y,varargout]=tsraster(r,t,varargin)
 
 %% SETUP
 
-pairs={ 'post'      2;...
-        'pre'       2;...
-        'bin_size'       0.01;...
-        };
+post=2;
+pre=2;
+bin_size=0.01;
 
-parseargs(varargin,  pairs,{},1);  
-    
+utils.overridedefaults(who, varargin);
+
 % if either are empty return empty
 
 if isempty(r) 
@@ -59,7 +58,7 @@ for i=1:length(r)
     if isnan(s)
         y(i,:)=nan;
     else
-    cc=qbetween(t, s,f)-r(i);
+    cc=stats.qbetween(t, s,f)-r(i);
     if ~isempty(cc)
     cc=histc(cc,-pre:bin_size:post);
     cc=cc(:)';

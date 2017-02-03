@@ -62,7 +62,7 @@ for nx=1:(numel(n)-1)
         se(nx)=max(abs(mu(nx)-ci));  
     % this is bad for low n.  
     else
-    se(nx)=nanstderr(y(yx==nx));
+    se(nx)=stats.nanstderr(y(yx==nx));
     end
 end
 
@@ -70,7 +70,7 @@ n=n(1:end-1);
 
 if plot_it
     
-    errorplot(gca,binc, mu, se,'Marker','o','Color',clr);
+    draw.errorplot(gca,binc, mu, se,'Marker','o','Color',clr);
     if ~isempty(plot_fit)
         beta=nlinfit(x,y,plot_fit,plot_fit_x0);
         xx=linspace(binc(1),binc(end),1000);
