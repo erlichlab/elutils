@@ -1,5 +1,16 @@
 classdef (Sealed) labdb < handle
-    
+% Class labdb
+% This is a wrapper class for the JDBC MySQL driver.
+% It has several features which are generally useful
+% 1. It reads credentials configurations from ~/.dbconf so that you don't have to type in credentials or store them in code.
+% 2. It maintains a single connection per configuration (a configuration is a user/hostname pair) for memory efficiency.
+% 3. It has several useful functions for getting and saving data to MySQL
+% 4. By default, automatically checks that the connection is alive and well before trying to communicate with the database.
+%    This incurs a small overhead, and can be turned off with `obj.autocheck = false`
+%
+% To see a list of the functions for the class type db.labdb.help
+% To get help for a specific function call db.labdb.help(function_name), e.g. db.labdb.help('query')
+
     
     properties (SetAccess=public,GetAccess=protected)
         config = [];
@@ -18,22 +29,36 @@ classdef (Sealed) labdb < handle
     methods (Access=public)
 
         function setConfig(obj, config)
+            % Manually set the user, passwd, host. 
+            % input should be a struct with those fields
             obj.config = config;
         end        
         
         function host = getHost(obj)
+            % host = getHost()
+            % output: the hostname from the current config
             host = obj.config.host;
         end
         
         function user = getUser(obj)
+            % host = getUser()
+            % output: the user from the current config
+
             user = obj.config.user;
         end
         
         function out = getConnectionInfo(obj)
+            % out = getConnectionInfo
+            % returns a struct with connection information (driver version, connection URL, etc)
             out = ping(obj.dbconn);
         end
         
         function cur = execute(obj, sqlstr, args)
+            % cur = execute(sql_command, [input arguments])
+            % executes the sql_command and returns a cursor object.
+            % Place holders can be used using sprintf style syntax.
+            % e.g. execute('insert into foo (a,b) values (%.3f,"%s")',{3.1441241, 'some text goes here'})
+            
             if nargin<3
                 args = {};
             end
@@ -49,6 +74,8 @@ classdef (Sealed) labdb < handle
         end
         
         function use(obj, schema)
+            % use(schema)
+            % sets the default schema
             cur = execute(obj,sprintf('use %s', schema));
             if cur.Message
                 error('Failed to switch schemas')
@@ -56,17 +83,26 @@ classdef (Sealed) labdb < handle
         end
 
         function out = explain(obj, table)
+            % explain(something)
+            % a shortcut for 'explain ...'
             out = query(obj,sprintf('explain %s', table));
         end
 
         function out = last_insert_id(obj)
+            % out = last_insert_id
+            % returns the last_insert_id
             out = query(obj,'select last_insert_id() as id');
             out = out.id;
         end
 
         function varargout = get(obj, sqlstr, args)
-        % if you are trying to get some numbers from the database 
-        % and you want to get the value rather than a table, use this function.
+        % varargout = get(sql_command, [input arguments])
+        % Like query, this command uses sprintf style parsing to execute a MySQL SELECT command.
+        % However, get is special in that it returns one variable for each column in the SELECT
+        % whereas query returns a single table for the entire query.
+        %
+        % e.g. sessid = obj.get('select sessid from sessions limit 1') % sessid will be a float
+        %  [sessdate, sessid] = obj.get('select sessiondate, sessid from sessions') % sessdate will be a cell array and sessid will be a vector of float
             
             if nargin < 3
                 args = {};
@@ -89,6 +125,12 @@ classdef (Sealed) labdb < handle
         end
         
         function out = query(obj, sqlstr, args)
+        % tableout = query(sql_command, [input arguments])
+        % Like execute, this command uses sprintf style parsing. But instead of returning a cursor,
+        % query returns a `table` object. 
+        %
+        % e.g. sessid = obj.query('select sessid from sessions limit 1') % sessid will be a table with a sessid column.
+        %  [sessdate, sessid] = obj.get('select sessiondate, sessid from sessions') % sessdate will be a cell array and sessid will be a vector of float
             
             if obj.autocheck 
                 checkConnection(obj);
@@ -185,6 +227,14 @@ classdef (Sealed) labdb < handle
     % This is ok for MATLAB since it is single threaded. 
     % It could potentially cause strange behavior if a user was doing inserts in a timer and also in the main 
     % thread and using `last_insert_id`
+        function help(fname)
+            if nargin == 0 
+                help('db.labdb')
+                methods('db.labdb')
+            else
+                help(sprintf('db.labdb.%s',fname))
+            end
+        end
 
         function so = getConnection(varargin)
             setdbprefs('DataReturnFormat','table')
