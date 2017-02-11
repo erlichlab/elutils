@@ -180,14 +180,24 @@ classdef (Sealed) labdb < handle
     end
     
     methods (Static)
+    % We use a static method to give the matlab client a database object
+    % for each configuration (IP, username) we only make one connection and then re-use it.
+    % This is ok for MATLAB since it is single threaded. 
+    % It could potentially cause strange behavior if a user was doing inserts in a timer and also in the main 
+    % thread and using `last_insert_id`
+
         function so = getConnection(varargin)
             setdbprefs('DataReturnFormat','table')
-            addMysqlConnecterToPath();
+            addMysqlConnecterToPath();  % Make sure the driver is on the path.
             
-            persistent localObj;
+            persistent localObj; % This is where we store existing connections.
 
             if nargin == 1
+                % The user provided a config name, so use that.
                 configsec = varargin{1};
+            elseif nargin ==0
+                % The user provided nothing. Use the default config.
+                configsec = 'client';
             else
                 configsec = utils.inputordefault('config','client',varargin);
             end
