@@ -44,7 +44,7 @@ n_y_bins=n_bins;
 even_bins=false;
 func=@nanmean;
 
-overridedefaults(who,varargin);
+utils.overridedefaults(who,varargin);
 
 
 if isempty(ax) && plot_it
@@ -107,7 +107,7 @@ for ny=1:numel(ybinc)
             
             se(ny,nx)=max(abs(ci-mu(ny,nx)));
         else
-        se(ny,nx)=nanstderr(z(xind==nx & yind==ny));
+        se(ny,nx)=stats.nanstderr(z(xind==nx & yind==ny));
         end
         n(ny,nx)=sum(~isnan(z(xind==nx & yind==ny)));
     end

@@ -160,7 +160,7 @@ for ci=1:numel(n_cnd)
     [y x]=maskraster(x,y,pre_mask(ref),post_mask(ref));
     
     ymn(ci,:) = nanmean(y,1);
-    yst(ci,:)= nanstderr(y,1);
+    yst(ci,:)= stats.nanstderr(y,1);
     R{ci}={y x};
     %axes(psthax);
     hold on

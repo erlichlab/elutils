@@ -10,7 +10,7 @@ ax=[];
 xlabels={'Control' 'Exp'};
 y_lim=[];
 
-overridedefaults(who,varargin);
+utils.overridedefaults(who,varargin);
 
 if isempty(ax)
     ax=gca;

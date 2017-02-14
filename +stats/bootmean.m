@@ -6,7 +6,6 @@ function varargout=bootmean(varargin)
 % Optional inputs:
 %   'boots'  the number of shuffles to perform (2000)
 
-
 if nargin>1 && isnumeric(varargin{2}) 
     A=varargin{1};
     B=varargin{2};
@@ -30,7 +29,7 @@ end
 boots=2000;
 
 
-overridedefaults(who,varargin);
+utils.overridedefaults(who,varargin);
 
 if one_dist
     % assume test whether mean of the population is differenct from zero.
@@ -46,7 +45,7 @@ if one_dist
     ps=[0:0.01:100];
     sd_ps=prctile(B,ps);
     
-    sd_p=get_p(0,B);
+    sd_p= stats.get_p(0,B);
     
     varargout{1}=sd_p;
     varargout{2}=prctile(B,50);
@@ -68,7 +67,7 @@ else
         boot_score(bx,:)=nanmean(A)-nanmean(B);
     end
     
-    sd_p=get_p(sd, boot_score);
+    sd_p= stats.get_p(sd, boot_score);
 end
 varargout{1}=sd_p;
 varargout{2}=prctile(B,[2.5 97.5]);

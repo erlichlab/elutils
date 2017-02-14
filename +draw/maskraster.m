@@ -40,8 +40,8 @@ end
 
 %% now loop through the trials
     maxx=numel(x);
-    prex=qfind(x,pre); 
-    postx=qfind(x,post);
+    prex= stats.qfind(x,pre); 
+    postx= stats.qfind(x,post);
     maskM=y;
     
     for tx=1:numel(prex)

@@ -10,7 +10,7 @@ function [p,D]=bootlda(A,B,varargin)
 
 BOOTS=10000;
 
-overridedefaults(who,varargin);
+utils.overridedefaults(who,varargin);
 
 n_A=size(A,1);
 n_B=size(B,1);
@@ -36,7 +36,7 @@ for bx=1:BOOTS
     
 end
 
-p=get_p(aucv,permAB);
+p= stats.get_p(aucv,permAB);
 
 D.ld=vAB;
 D.bootp=p;

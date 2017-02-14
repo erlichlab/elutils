@@ -30,7 +30,7 @@ end
 boots=2000;
 
 
-overridedefaults(who,varargin);
+utils.overridedefaults(who,varargin);
 
 if one_dist
     % assume test whether mean of the population is differenct from zero.
@@ -46,7 +46,7 @@ if one_dist
     ps=[0:0.01:100];
     sd_ps=prctile(B,ps);
     
-    sd_p=get_p(0,B);
+    sd_p=stats.get_p(0,B);
     
     varargout{1}=sd_p;
     varargout{2}=prctile(B,50);
@@ -74,7 +74,7 @@ elseif nargin==2
         boot_score(bx,:)=nanmedian(A)-nanmedian(B);
     end
     
-    sd_p=get_p(sd, boot_score);
+    sd_p=stats.get_p(sd, boot_score);
 end
 varargout{1}=sd_p;
 varargout{2}=prctile(B,[2.5 97.5]);

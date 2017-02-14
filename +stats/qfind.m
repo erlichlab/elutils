@@ -1,5 +1,5 @@
-function ys=qfind(x,ts)
-% function y=qfind(x,ts)
+function ys = qfind(x,ts)
+% function y= stats.qfind(x,ts)
 % x is a vector , t is the target (can be one or many targets),
 % y is same length as ts
 % does a binary search: assumes that x is sorted low to high and unique.

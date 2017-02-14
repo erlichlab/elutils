@@ -9,7 +9,7 @@ fit_func=@sig4;
 beta0=[0 1 mean(X) 1];
 TrialRange=95;
 
-overridedefaults(who,varargin);
+utils.overridedefaults(who,varargin);
 
 ci=(100-TrialRange)/2;
 
@@ -24,7 +24,7 @@ seY=zeros(numel(bins)-1,1);
 
 for bx=1:numel(muY)
     muY(bx)=nanmean(Y(ni==bx));
-    seY(bx)=nanstderr(Y(ni==bx));
+    seY(bx)=stats.nanstderr(Y(ni==bx));
 end
 binc=(bins(1:end-1)+bins(2:end))/2;
 

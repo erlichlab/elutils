@@ -30,8 +30,8 @@ end
 boots=5000;
 
 
-overridedefaults(who,varargin);
-	
+utils.overridedefaults(who,varargin);
+
 
 if one_dist
 	% assume test whether variance of the population is differenct from one.
@@ -46,7 +46,7 @@ if one_dist
 	ps=[0:0.01:100];
 	sd_ps=prctile(B,ps);
 
-    sd_p=get_p(1,B);
+    sd_p= stats.get_p(1,B);
 	
 	varargout{1}=sd_p;
 	varargout{2}=prctile(B,[2.5 97.5]);
@@ -71,7 +71,7 @@ elseif ~one_dist
 		boot_score(bx,:)=nanvar(A)-nanvar(B);
 	end
 	
-	sd_p=get_p(sd, boot_score);   
+	sd_p= stats.get_p(sd, boot_score);   
 end
 	varargout{1}=sd_p;
 	varargout{2}=prctile(B,[2.5 97.5]);

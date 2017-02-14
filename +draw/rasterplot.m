@@ -75,7 +75,7 @@ spk_ind=1;
 for i=1:numel(r)
     s=r(i)-pre;
     f=r(i)+post;
-    cc=qbetween(t, s,f)-r(i);
+    cc=stats.qbetween(t, s,f)-r(i);
     cc=cc(cc>pre_mask(i));
     cc=cc(cc<post_mask(i));
     

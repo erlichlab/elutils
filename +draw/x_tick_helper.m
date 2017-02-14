@@ -5,7 +5,7 @@ function ht=x_tick_helper(ax,xloc,xtext,varargin)
 
 rot=90;
 
-overridedefaults(who,varargin);
+utils.overridedefaults(who,varargin);
 
 if rot==0
     vert_a='top';

@@ -1,11 +1,11 @@
-function y=get_prctile(datumM, distM)
-% p=get_p(datum, dist)
-% p=get_p(datum, dist, tails, high)
+function y= stats.get_prctile(datumM, distM)
+% p= stats.get_p(datum, dist)
+% p= stats.get_p(datum, dist, tails, high)
 % p is the percentile of datum in the distribution dist.
 % datum can be a single value or a 1 by n vector
 % dist  can be a vector  or an m by n matrix
 % 
-%  e.g. p=get_prctile(2,randn(1000,1));
+%  e.g. p= stats.get_prctile(2,randn(1000,1));
 %	 	   
 %		p = 0.9799
 %       
@@ -28,13 +28,13 @@ for dx=1:numel(datumM)
 
 	ps=[0.001:0.001:10 10.1:0.1:90 90.001:0.001:99.999];
 	sd_ps=prctile(dist,ps);
-	closest=qfind(sd_ps,datum);
+	closest= stats.qfind(sd_ps,datum);
 	if isnan(datum)
 		% Then the value of from_uni was lower than any value in the
 		% distribution.
 		y(dx)=nan;
 	else
-		if closest==-1  % datum out of range
+		if closest<=0  % datum out of range
 			others=1;
 		else
 			others=find(sd_ps==sd_ps(closest));

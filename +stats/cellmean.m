@@ -4,7 +4,7 @@ function [mu, se]=cellmean(M,varargin)
 
 dim=1;
 
-overridedefaults(who,varargin)
+utils.overridedefaults(who,varargin)
 
 mu=nan(1,numel(M));
 se=mu;
@@ -16,6 +16,6 @@ for fx=1:numel(M)
         se(fx)=nan;
     else
         mu(fx)=nanmean(M{fx},dim);
-        se(fx)=nanstderr(M{fx},dim);
+        se(fx)=stats.nanstderr(M{fx},dim);
     end
 end

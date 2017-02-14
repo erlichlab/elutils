@@ -28,7 +28,7 @@ parfor bx = 1:boots
     [auc_b(bx,:)]=auc(stim,nostim);
 end
 
-auc_p=get_p(auc_val, auc_b);
+auc_p= stats.get_p(auc_val, auc_b);
 
 if nargout==3
     varargout{1}=auc_b;

@@ -12,8 +12,8 @@ y=zeros(size(start));
 
 if numel(start)>1
     for sx=1:numel(start)
-        y(sx)=numel(qbetween(x,start(sx), finish(sx)));
+        y(sx)=numel(stats.qbetween(x,start(sx), finish(sx)));
     end
 else
-    y=numel(qbetween(x,start,finish));
+    y=numel(stats.qbetween(x,start,finish));
 end

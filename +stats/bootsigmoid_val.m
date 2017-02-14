@@ -12,8 +12,8 @@ function [p,D]=bootsigmoid(A,B,varargin)
 
 BOOTS=100000;
 
-overridedefaults(who,varargin);
-
+utils.overridedefaults(who,varargin);
+import stats.*
 
 [dAB, D]=get_dist(A,B);
 n_A=size(A,1);
@@ -34,7 +34,7 @@ parfor bx=1:BOOTS
     
 end
 
-p=get_p(dAB,permAB);
+p= stats.get_p(dAB,permAB);
 
 D.permAB=permAB;
 D.p=p;

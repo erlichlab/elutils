@@ -16,7 +16,7 @@ cmax=max([A(:);B(:);B(:)-A(:)]);
 ax=[];
 plot_colorbar=false;
 
-overridedefaults(who,varargin)
+utils.overridedefaults(who,varargin)
 
 if isempty(fig)
     fig=figure;

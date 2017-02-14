@@ -25,7 +25,7 @@ adjust_p=true;
 use_ttest=true;
 nboots=2500;
 do_median=false;
-overridedefaults(who,varargin);
+utils.overridedefaults(who,varargin);
 
 if isnumeric(M)
     

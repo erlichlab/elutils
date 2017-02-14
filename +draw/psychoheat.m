@@ -4,7 +4,7 @@ plot_contour=false;
 E=[];
 nan_val=nan;
 
-overridedefaults(who,varargin);
+utils.overridedefaults(who,varargin);
 
 % Check inputs are the same length
 nx=numel(x);

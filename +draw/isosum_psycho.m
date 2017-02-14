@@ -26,7 +26,7 @@ data_marker_size=2;
 
 
 
-overridedefaults(who,varargin);
+utils.overridedefaults(who,varargin);
 if isempty(ax) && plot_it
     ax=axes;
 end
@@ -79,7 +79,7 @@ for sx=1:nsumbins
             mp=plot(ax,dc,mod(bfit,[x1(gt) x2(gt)]),'.','Color',(clrs(sx,:)+1)/2);
             set(mp,'MarkerSize',model_marker_size);
         end
-        he=errorplot(ax,X(sx,:)+0.2*sx,Y(sx,:), E(sx,:),'Color',clrs(sx,:),'Marker','o');
+        he=draw.errorplot(ax,X(sx,:)+0.2*sx,Y(sx,:), E(sx,:),'Color',clrs(sx,:),'Marker','o');
         set(he(2),'MarkerFaceColor',clrs(sx,:),'MarkerSize',data_marker_size);
 
         

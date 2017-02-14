@@ -1,6 +1,6 @@
-function y=get_p(datumM, distM, tails, high)
-% p=get_p(datum, dist)
-% p=get_p(datum, dist, tails, high)
+function y= get_p(datumM, distM, tails, high)
+% p= stats.get_p(datum, dist)
+% p= stats.get_p(datum, dist, tails, high)
 % p is the prob that datum comes from dist.
 % tails is by default 2
 % if tails == 1 , then p is the prob that datum
@@ -10,7 +10,6 @@ function y=get_p(datumM, distM, tails, high)
 % p is the probability of datum in dist
 
 % check that inputs are the right size
-
 if nargin<3
     tails=2;
 end
@@ -48,9 +47,9 @@ for dx=1:numel(datumM)
     dist=dist(~isnan(dist));
     ps=linspace(0,100,numel(dist));  % this limits the lowest p value it is possible to return. Maybe this should be relative to the size of dist
     sd_ps=prctile(dist,ps);
-    closest=qfind(sd_ps,datum);
+    closest= stats.qfind(sd_ps,datum);
     if tails==2
-        if closest==-1  % datum out of range
+        if closest<=0  % datum out of range
             others=1; 
         else
             others=find(sd_ps==sd_ps(closest));

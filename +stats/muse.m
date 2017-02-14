@@ -5,7 +5,7 @@ if nargin==1
 end
 
 mu=nanmean(X,dim);
-se=nanstderr(X,dim);
+se=stats.nanstderr(X,dim);
 
 Y=[mu(:) se(:)];
 

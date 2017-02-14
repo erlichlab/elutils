@@ -35,7 +35,7 @@ parfor bx=1:BOOTS
 	boot_score(bx)=auc(A,B);
 end
 
-sd_p=get_p(sd, boot_score);
+sd_p= stats.get_p(sd, boot_score);
 end
 
 varargout{1}=sd;

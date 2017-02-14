@@ -58,7 +58,7 @@ while ~done
     % [y x]=maskraster(x,y,pre_mask(ref),post_mask(ref));
     
     ymn = nanmean(y(inc_t,:));
-    yst = nanstderr(y(inc_t,:));
+    yst = stats.nanstderr(y(inc_t,:));
     
     if do_plot
         plot_this(ax,x,y,inc_t,offset,save_plot,pre,post,cnt,0,col_axis,col_map,mark_this);

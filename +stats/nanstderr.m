@@ -1,5 +1,5 @@
 
-function y=nanstderr(x,dim)
+function y = nanstderr(x,dim)
 
 if nargin==1
 	dim=1;

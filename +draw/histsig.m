@@ -51,7 +51,7 @@ x_mean=nanmean(x);
 
 [CI]=prctile(B,[2.5 97.5]);
 
-x_se=nanstderr(x);
+x_se=stats.nanstderr(x);
 
 if xt_sig<0.05
     y_lim=ylim(hx);
