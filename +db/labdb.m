@@ -204,7 +204,7 @@ classdef (Sealed) labdb < handle
 
             if isempty(obj.dbconn) || ~obj.dbconn.isopen
                 obj.dbconn = database(obj.config.db,obj.config.user,obj.config.passwd,'Vendor','MySQL',...
-                    'Server',obj.config.host);
+                    'Server',obj.config.host,'PortNumber',obj.config.port);
             end
             
             
@@ -295,46 +295,22 @@ function cfg = readDBconf(cfgname)
 % A private function to help the labdb class read credentials from the
 % .dbconf file in the user's home directory.
 
-cfg.db = ''; % In case db is not passed in set it by default to nothing.
+def.db = ''; % In case db is not passed in set it by default to nothing.
+def.port = 3306;
 if nargin == 0
     
     cfgname = 'client';
 end
-import java.lang.*;
-cusr=System.getProperty('user.home');
-cfgfile = fullfile(char(cusr), '.dbconf');
+cfgfile = '~/.dbconf';
 
 if ~exist(cfgfile,'file')
     error('labdb:dbconf','.dbconf file not found in home directory');
 end
 
-fid = fopen(cfgfile);
-start = false;
-while 1
-    tline = fgetl(fid);
-    if ~ischar(tline), break, end
-    
-    
-    if start
-        if numel(tline)==0 
-            % Starting another section.
-            continue
-        end
+allcfg = utils.ini2struct(cfgfile);
+fopts = allcfg.(cfgname);
+cfg = utils.apply_struct(def, fopts);
 
-        if tline(1) == '['
-            break
-        end
-
-        [field, value] = strtok(tline,'=');
-        
-        cfg.(strtrim(field)) = strtrim(value(2:end));
-    end
-    
-    if strcmpi(tline, ['[' cfgname ']'])
-        start = true;
-    end
-end
-fclose(fid);
 end
 
 function addMysqlConnecterToPath()
