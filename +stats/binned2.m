@@ -23,6 +23,8 @@ function [xbinc, ybinc, mu, se, n]=binned2(x,y,z, varargin)
 % ybin_e=[];        Optional bin edges for the y-axis.  Overrides all
 %                   earlier options
 % plot_it=false;
+% marker            if plot_it then use this marker ['o']
+% linestyle         if plot_it then use this linestyle ['-']
 % ax=[];            if plot_it=true, plot to this axis
 %
 % Output:
@@ -43,6 +45,8 @@ n_x_bins=n_bins;
 n_y_bins=n_bins;
 even_bins=false;
 func=@nanmean;
+linestyle = '-';
+marker = 'o';
 
 utils.overridedefaults(who,varargin);
 
@@ -116,8 +120,8 @@ end
 
 if plot_it
     for ny=1:numel(ybinc)
-        hh(ny,:)=errorplot(ax,xbinc, mu(ny,:), se(ny,:),'Marker','o','Color',clr(ny,:));
-        set(hh(ny,2),'LineStyle','-','LineWidth',2)
+        hh(ny,:)=draw.errorplot(ax,xbinc, mu(ny,:), se(ny,:),'Marker',marker,'Color',clr(ny,:));
+        set(hh(ny,2),'LineStyle',linestyle,'LineWidth',2)
     end
 end
 
