@@ -1,6 +1,6 @@
 
 
-function [hm, hx, hy]=scatter_histhist(x, x_sig, y,y_sig, x_lim, y_lim, varargin)
+function [hm, hx, hy]=scatter_histhist(x, x_sig, y,y_sig, varargin)
 % [hm, hx, hy]=scatter_histhist(x, x_sig, y,y_sig, x_lim, y_lim)
 % Optional arguments:
 % width, hist_height, num_bins, x_label, y_label
@@ -22,18 +22,16 @@ num_bns=iod('num_bins',17,varargin);
 x_label=iod('x_label','',varargin);
 y_label=iod('y_label','',varargin);
 
-	x_lim_b=[min(x)-0.1 max(x)+0.1];
-	y_lim_b=[min(y)-0.1 max(y)+0.1];
+x_lim_b=[min(x)-0.1 max(x)+0.1];
+y_lim_b=[min(y)-0.1 max(y)+0.1];
 
-if nargin==4;
-	x_lim=x_lim_b;
-	y_lim=y_lim_b;
-end
-	
+x_lim = iod('x_lim',x_lim_b,varargin);
+y_lim = iod('y_lim',y_lim_b,varargin);
 
 
 figure
-hm=axes('Position',[org org wdth wdth]);
+hm=draw.jaxes;
+hm.Position = [org org wdth wdth];
 set(hm,'Xlim',[-1 1]);
 set(hm,'Ylim',[-1 1]);
 
@@ -49,11 +47,11 @@ marker_size(x_sig+y_sig==2)=36;
 % make the scatter plot
 
 scatter(hm,x, y, 36,'k');
-xlabel(hm,'');
-ylabel(hm,'Anti Trials (r)');
+xlabel(hm,x_label);
+ylabel(hm,y_label);
 xlim(hm,x_lim);
 ylim(hm,y_lim);
-xhairs(hm,'k-',0,0);
+draw.xhairs(hm,'k:',0,0);
 axes(hm);
 text(getx,gety,['n=' num2str(numel(x))])
 
@@ -90,7 +88,7 @@ nsig=nsig(1:end-1);
 sig=histc(x(x_sig==1), bns);
 sig=sig(1:end-1);
 cbns=edge2cen(bns);
-[hh]=bar(hx,cbns, [sig nsig],'stacked');
+[hh]=bar(hx,cbns, [sig(:) nsig(:)],'stacked');
 set(hx, 'XTick',[]);
 xlim(hx,x_lim);
 set(gca, 'YAxisLocation','left');
