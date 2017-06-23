@@ -25,7 +25,7 @@ TO.vals = obj;
 TO.info = meta;
 
 try
-    out = json.jsonencode(TO);
+    out = jsonencode(TO);
 catch
     out = json.tojson(TO);
 end
