@@ -7,6 +7,11 @@ function varargout=bootmedian(varargin)
 %   'boots'  the number of shuffles to perform (2000)
 
 
+if nargin==0
+    help('stats.bootmedian')
+    return
+end
+
 if nargin>1 && isnumeric(varargin{2}) 
     A=varargin{1};
     B=varargin{2};

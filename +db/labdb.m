@@ -316,7 +316,7 @@ end
 function addMysqlConnecterToPath()
     jcp = javaclasspath('-all');
     
-    jarfile = 'mysql-connector-java-5.1.39-bin.jar';
+    jarfile = 'mysql-connector-java-5.1.42-bin.jar';
     
     if isempty(cell2mat(regexp(jcp,jarfile)))
         % Mysql is not on the path

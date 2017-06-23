@@ -24,7 +24,12 @@ end
 TO.vals = obj;
 TO.info = meta;
 
-out = json.tojson(TO);
+try
+    out = json.jsonencode(TO);
+catch
+    out = json.tojson(TO);
+end
+
 
 if compress
     out = utils.zlibencode(out);
