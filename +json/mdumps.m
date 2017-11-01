@@ -83,7 +83,7 @@ function [M, S] = get_info_flatten_thorough(S)
         for cx = 1:numel(S)
             [M.cell__{cx}, S{cx}] =  get_info_flatten_thorough(S{cx});
         end
-    elseif is
+    else
         [M.type__, M.dim__] = getleafinfo(S);
         error('json:mdumps','Do not know how to handle data of type %s', M.type)
     end
