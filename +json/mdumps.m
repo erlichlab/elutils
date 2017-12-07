@@ -85,7 +85,7 @@ function [M, S] = get_info_flatten_thorough(S)
         end
     else
         [M.type__, M.dim__] = getleafinfo(S);
-        error('json:mdumps','Do not know how to handle data of type %s', M.type)
+        error('json:mdumps','Do not know how to handle data of type %s', M.type__)
     end
 end
 
