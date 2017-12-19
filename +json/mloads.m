@@ -105,7 +105,7 @@ function vals = applyinfo_bi(vals, meta)
             end
             
             if strcmp(meta.type__, 'struct') % This is a struct array
-                vals = [newvals{:}];
+                newvals = [newvals{:}];
             end
             vals = reshape(newvals, tsize);
             
