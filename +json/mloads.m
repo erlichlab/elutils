@@ -87,30 +87,32 @@ end
 
 
 function vals = applyinfo_bi(vals, meta)
-    
+    if iscell(meta)
+        meta = meta{1};
+    end
     if isfield(meta,'type__')
         % Then we are a leaf node
-        tsize =meta.dim__;
+        tsize =meta.dim__(:)';
         tnumel = prod(tsize);
         switch(meta.type__)
         case {'cell', 'struct'}
             for cx = 1:tnumel
-                vals{cx} = applyinfo_bi(vals{cx}, meta.cell__{cx});
+                if iscell(vals)
+                    newvals{cx} = applyinfo_bi(vals{cx}, meta.cell__(cx));
+                else
+                    newvals{cx} = applyinfo_bi(vals(cx), meta.cell__(cx));
+                end
             end
+            
             if strcmp(meta.type__, 'struct') % This is a struct array
-                vals = [vals{:}];
+                vals = [newvals{:}];
             end
-            vals = reshape(vals, tsize);
+            vals = reshape(newvals, tsize);
             
         case 'char'
             vals = char(vals);
         case 'double'
-            if tnumel == 1
-                vals = double(vals);
-            else
-                vals = double([vals{:}]);
-                vals = reshape(vals, tsize);
-            end
+              vals = reshape(vals, tsize);  
         otherwise
             f = @(x) cast(x, meta.type__);
             if tnumel == 1 || strcmp(meta.type__, 'char')
