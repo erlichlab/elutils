@@ -23,13 +23,22 @@ function out = mloads(jstr, varargin)
         jstr = char(utils.zlibdecode(jstr));
     end
 
-    bigJ = json.fromjson(jstr);
+    try 
+        bigJ = jsondecode(jstr);
+        builtin_flag = true;
+    catch
+        bigJ = json.fromjson(jstr);
+        builtin_flag = false;
+    end
 
     out = bigJ.vals;
     meta = bigJ.info;
 
-    out = applyinfo(out, meta);
-
+    if builtin_flag
+        out = applyinfo_bi(out, meta);
+    else
+        out = applyinfo(out, meta);
+    end
 end
 
 function vals = applyinfo(vals, meta)
@@ -76,4 +85,48 @@ function vals = applyinfo(vals, meta)
     end
 end
 
+
+function vals = applyinfo_bi(vals, meta)
+    
+    if isfield(meta,'type__')
+        % Then we are a leaf node
+        tsize =meta.dim__;
+        tnumel = prod(tsize);
+        switch(meta.type__)
+        case {'cell', 'struct'}
+            for cx = 1:tnumel
+                vals{cx} = applyinfo_bi(vals{cx}, meta.cell__{cx});
+            end
+            if strcmp(meta.type__, 'struct') % This is a struct array
+                vals = [vals{:}];
+            end
+            vals = reshape(vals, tsize);
+            
+        case 'char'
+            vals = char(vals);
+        case 'double'
+            if tnumel == 1
+                vals = double(vals);
+            else
+                vals = double([vals{:}]);
+                vals = reshape(vals, tsize);
+            end
+        otherwise
+            f = @(x) cast(x, meta.type__);
+            if tnumel == 1 || strcmp(meta.type__, 'char')
+                vals = f(vals);
+            else
+                 vals = cellfun(f, vals);
+              %  vals = cell2mat(vals);
+                 vals = reshape(vals, tsize);
+            end
+
+        end
+    else
+        fnames = fieldnames(meta);
+        for fx = 1:numel(fnames)
+            vals.(fnames{fx}) = applyinfo_bi(vals.(fnames{fx}), meta.(fnames{fx}));
+        end 
+    end
+end
 
