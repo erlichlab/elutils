@@ -15,7 +15,7 @@ function ok = sendmattermost(channel,message,varargin)
 	payload = inpd('payload',[],varargin);
 
 	if isempty(payload)
-		payload = sprintf('{"channel":"%s", "text":"%s"}',channel,message);
+		payload = sprintf('{"channel":"%s", "text":%s}',channel,jsonencode(message));
 	else
 		if ~isempty(channel) || ~isempty(message)
 			fprintf(2,'Using payload and ignoring channel and message content.');

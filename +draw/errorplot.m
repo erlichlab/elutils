@@ -46,13 +46,19 @@ LineStyle = 'none';
 Marker = 'o';
 Color='k'; 
 LineWidth=1;
-   
+asLimits = false;
+
 utils.overridedefaults(who, varargin);
 
 
 
 X=[x(:) x(:) ones(numel(x),1)+nan];
-Y=[y(:)-l(:) y(:)+u(:) ones(numel(x),1)+nan];
+if asLimits
+    Y=[l(:) u(:) ones(numel(x),1)+nan];
+else
+    Y=[y(:)-l(:) y(:)+u(:) ones(numel(x),1)+nan];
+end
+    
 X=reshape(X', numel(X), 1);
 Y=reshape(Y', numel(Y), 1);
 
