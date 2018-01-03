@@ -83,9 +83,15 @@ function [M, S] = get_info_flatten_thorough(S)
         for cx = 1:numel(S)
             [M.cell__{cx}, S{cx}] =  get_info_flatten_thorough(S{cx});
         end
-    elseif is
+    elseif isobject(S)
+        S = struct(S);
+        fnames = fieldnames(S);
+        for fx = 1:numel(fnames)
+            [M.(fnames{fx}), S.(fnames{fx})] = get_info_flatten_thorough(S.(fnames{fx}));
+        end
+    else
         [M.type__, M.dim__] = getleafinfo(S);
-        error('json:mdumps','Do not know how to handle data of type %s', M.type)
+        error('json:mdumps','Do not know how to handle data of type %s', M.type__)
     end
 end
 
