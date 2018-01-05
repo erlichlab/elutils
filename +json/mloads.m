@@ -96,6 +96,7 @@ function vals = applyinfo_bi(vals, meta)
         tnumel = prod(tsize);
         switch(meta.type__)
         case {'cell', 'struct'}
+            newvals=cell(tnumel,1);
             for cx = 1:tnumel
                 if iscell(vals)
                     newvals{cx} = applyinfo_bi(vals{cx}, meta.cell__(cx));
