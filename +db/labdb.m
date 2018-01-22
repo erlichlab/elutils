@@ -120,8 +120,15 @@ classdef (Sealed) labdb < handle
         end
 
         
-        function call(obj, sqlstr)
-            execute(obj,sprintf('call %s', sqlstr));
+        function call(obj, sqlstr, args)
+        % call('storedProcedure(2456)')
+        % call('storedProcedure(%d,"%s")',{1234,'stuff'})
+        % Calls the stored procedure with the passed arguments.
+        
+            if nargin<3
+                args={};
+            end
+            execute(obj,sprintf('call %s', sprintf(sqlstr, args{:})));
         end
         
         function out = query(obj, sqlstr, args)
