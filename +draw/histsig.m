@@ -47,7 +47,7 @@ set(gca,'Color','none')
 text(getx,gety,[num2str(round(100*mean(x_sig))) '% p<0.05'])
 
 x_mean=nanmean(x);
-[xt_sig,xt_mu,B]=bootmean(x);
+[xt_sig,xt_mu,B]=stats.bootmean(x);
 
 [CI]=prctile(B,[2.5 97.5]);
 

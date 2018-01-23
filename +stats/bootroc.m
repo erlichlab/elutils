@@ -22,17 +22,17 @@ if isempty(A) || isempty(B)
     boot_score=nan;
 else
 
-sd=auc(A,B);
+sd=stats.auc(A,B);
 sA=numel(A);
 ALL_DATA=[A(:);B(:)];
 boot_score=0.5+zeros(BOOTS,1);
-parfor bx=1:BOOTS
+for bx=1:BOOTS
 
 	shuff_d=ALL_DATA(randperm(numel(ALL_DATA)));
 	A=shuff_d(1:sA);
 	B=shuff_d(sA+1:end);
 
-	boot_score(bx)=auc(A,B);
+	boot_score(bx)=stats.auc(A,B);
 end
 
 sd_p= stats.get_p(sd, boot_score);
