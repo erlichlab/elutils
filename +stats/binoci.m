@@ -1,4 +1,4 @@
-function ci = binoci(x,lowhigh)
+function ci = binoci(x,lowhigh, cirange)
 % ci = binoci(x)
 % x is a boolean vector
 % lowhigh is 'low','high' or 'both' ['both'] 
@@ -9,7 +9,12 @@ if nargin<2
     lowhigh = 'both';
 end
 
-[~,ci] = binofit(sum(x),numel(x));
+if nargin<3
+    cirange = 0.05;
+end
+
+
+[~,ci] = binofit(sum(x),numel(x),cirange);
 
 switch lowhigh
     case 'low'
