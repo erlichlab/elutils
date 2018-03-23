@@ -23,6 +23,7 @@ function out = mloads(jstr, varargin)
         jstr = char(utils.zlibdecode(jstr));
     end
 
+    jstr = regexprep(jstr, '\<NaN\>', 'null');
     try 
         bigJ = jsondecode(jstr);
         builtin_flag = true;
