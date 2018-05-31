@@ -114,7 +114,9 @@ function vals = applyinfo_bi(vals, meta)
         case 'char'
             vals = char(vals);
         case 'double'
+            if ~isempty(vals) && prod(tsize)>1
               vals = reshape(vals, tsize);  
+            end
         otherwise
             f = @(x) cast(x, meta.type__);
             if tnumel == 1 || strcmp(meta.type__, 'char')
