@@ -1,9 +1,12 @@
 function [maskM,x]=maskraster(x,y,pre,post,varargin)
 % [y,x]=maskraster(x,y,pre,post,[null_value])
 %
-opts.null_value=nan;
+%opts.null_value=nan;
 
-parseargs(varargin,opts,{},1);
+iod = @utils.inputordefault;
+null_value = iod('null_value',nan,varargin);
+
+%parseargs(varargin,opts,{},1);
 
 % x is a row vector of length s
 % y is a matrix with s columns and t rows
