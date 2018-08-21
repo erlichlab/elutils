@@ -29,35 +29,35 @@ function [ras,R]=exampleraster(ev, ts,varargin)
 %
 
 corner=[];  % this is necessary because corner is a function
-pairs={'pre'        3;...
-    'post'       3;...
-    'binsz'      0.01;...
-    'cnd'        1;...
-    'meanflg'    0;...
-    'krn'        0.1;...
-    'ax_handle'  [];...
-    'legend_str' '';...
-    'renderer', 'painters';...
-    'ref_label', 'REF';...
-    'psth_height', 0.248;...
-    'total_height' 0.8;...
-    'corner'       [0.1 0.1];...
-    'ax_width'      0.55;...
-    'font_name'	   'Helvetica';...
-    'font_size'		14;...
-    'legend_pos'     [0.73 0.1 0.2 0.15];...
-    'clrs'	{'b','m','r','c','k','g','y',[1 0.5 0],[0.5 0.5 0.5]};...
-    'x_label','';...
-    'pre_mask', -inf;...
-    'post_mask',+inf;...
-    'cout',[];...
-    'stim_back',[];...
-    'sb_clr',[0.8 0.8 0.4];...
-    'errorbars', 1;...
-    'testfunc', [];...
-    'show_yinfo', 1;...
-    'sortby', [];
-    }; parseargs(varargin,pairs,{},1);
+iod = @utils.inputordefault;
+pre = iod('pre',3,varargin);
+post = iod('post',3,varargin);
+binsz = iod('binsz',0.01,varargin);
+cnd = iod('cnd',1,varargin);
+meanflg = iod('meanflg',0,varargin);
+krn = iod('krn',0.1,varargin);
+ax_handle = iod('ax_handle',[],varargin);
+legend_str = iod('legend_str','',varargin);
+renderer =iod('renderer','painters',varargin);
+ref_label=iod('ref_label','REF',varargin);
+psth_height=iod('psth_height',0.248,varargin);
+total_height=iod('total_height',0.8,varargin);
+corner=iod('corner',[0.1 0.1],varargin);
+ax_width=iod('ax_width',0.55,varargin);
+font_name=iod('font_name','Helvetica',varargin);
+font_size=iod('font_size',14,varargin);
+legend_pos=iod('legend_pos',[0.73 0.1 0.2 0.15],varargin);
+clrs=iod('clrs',{'b','m','r','c','k','g','y',[1 0.5 0],[0.5 0.5 0.5]},varargin);
+x_label=iod('x_label','',varargin);
+pre_mask=iod('pre_mask', -inf,varargin);
+post_mask=iod('post_mask',+inf,varargin);
+cout=iod('cout',[],varargin);
+stim_back=iod('stim_back',[],varargin);
+sb_clr=iod('sb_clr',[0.8 0.8 0.4],varargin);
+errorbars=iod('errorbars',1,varargin);
+testfunc=iod('testfunc',[],varargin);
+show_yinfo=iod('show_yinfo',1,varargin);
+sortby=iod('sortby',[],varargin);
 
 
 set(gcf, 'Renderer',renderer);
@@ -112,8 +112,9 @@ if numel(cnd)==1
 end
 
 
-[Y,x,W]=warpfilter(ev,ts,krn,'pre',pre,'post',post,'kernel_bin_size',binsz);
-
+%[Y,x,W]=warpfilter(ev,ts,krn,'pre',pre,'post',post,'kernel_bin_size',binsz);
+[Y,x]=stats.spike_filter(ev,ts,krn,'pre',pre,'post',post,'kernel_bin_size',binsz);
+W = ts;
 
 for ci=1:numel(n_cnd)
     sampz=sum(cnd==n_cnd(ci));
@@ -127,7 +128,7 @@ for ci=1:numel(n_cnd)
     
     y=Y(ref,:);
     
-    [y2,x2]=rasterplot(ev(ref,1),W,pre,post,'pre_mask',pre_mask(ref),'post_mask',post_mask(ref),'plotthis',0);
+    [y2,x2]=draw.rasterplot(ev(ref,1),W,pre,post,'pre_mask',pre_mask(ref),'post_mask',post_mask(ref),'plotthis',0);
     ras(ci)=axes('Position',[corner(1) y_ind ax_width height_per_trial*sampz]);
     y_ind=y_ind+height_per_trial*sampz+0.001;
     
@@ -157,7 +158,7 @@ for ci=1:numel(n_cnd)
     end
     %% Calculate the mean and ci of the
     
-    [y x]=maskraster(x,y,pre_mask(ref),post_mask(ref));
+    [y x]=draw.maskraster(x,y,pre_mask(ref),post_mask(ref));
     
     ymn(ci,:) = nanmean(y,1);
     yst(ci,:)= stats.nanstderr(y,1);
