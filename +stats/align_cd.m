@@ -1,5 +1,5 @@
 function [offset,inc_t,x,y]=align_cd(ev, ts,val,varargin)
-% [ax_handle,data]=align_cd(ev, ts,val, varargin)
+% [offset,inc_t,x,y]=align_cd(ev, ts,val, varargin)
 
 % pairs={'pre'        3;...
 %        'post'       3;...
@@ -55,7 +55,7 @@ inc_t=ones(size(ev))==1;
         
 	%% Calculate the mean and ci of the
 while ~done
-    [y,x]=stats.cdraster(ev+offset,ts(:),val(:),pre,post,binsz);
+    [y,x]=stats.cdraster(ev+offset,ts(:),val(:),'pre',pre,'post',post,'bin',binsz);
     if cnt==1 && ~isempty(max_peak)
             thresh=prctile(y(:),max_peak);
     else
@@ -74,7 +74,7 @@ while ~done
         drawnow
     end   
     
-    for tx=1:numel(ev);
+    for tx=1:numel(ev)
         if inc_t(tx)
           
             [xcy,xcx]=xcorr(y(tx,:)-nanmean(y(tx,:)),ymn-nanmean(ymn));
