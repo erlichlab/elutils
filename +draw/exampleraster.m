@@ -95,9 +95,21 @@ if isscalar(krn)
     krn=krn/sum(krn);
 end
 
+if numel(cnd)==1
+    cnd=ones(1,ntrials);
+end
 
 
-n_cnd=unique(cnd(~isnan(cnd)));
+if iscell(cnd)
+    cnd_nan = cellfun(@(x)isnan(x), cnd)
+    cnd(cnd_nan) = 'NaN';
+    cnd = categorical(cnd);
+    n_cnd = catergories(cnd);
+else
+    cnd = categorical(cnd);
+    n_cnd = catergories(cnd);
+end
+
 raster_height=total_height-psth_height;
 y_ind=psth_height+corner(2)+0.005;
 
@@ -107,9 +119,6 @@ hold(psthax,'on');
 set(psthax,'FontName',font_name);
 set(psthax,'FontSize',font_size)
 
-if numel(cnd)==1
-    cnd=ones(1,ntrials);
-end
 
 
 %[Y,x,W]=warpfilter(ev,ts,krn,'pre',pre,'post',post,'kernel_bin_size',binsz);
