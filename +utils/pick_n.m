@@ -14,6 +14,8 @@ if isvector(list)
     else
         rowflag = false;
     end
+else
+    rowflag = false;
 end
 
 num = size(list,1);
