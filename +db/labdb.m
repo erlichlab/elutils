@@ -53,6 +53,24 @@ classdef (Sealed) labdb < handle
             out = ping(obj.dbconn);
         end
         
+        function list = list_enums(obj, tablename, column)
+            out = obj.query('show columns from %s where field="%s"',{tablename, column});
+            enums = out.COLUMN_TYPE{1}(6:end-1);
+            done = false;
+            list = {};
+            while ~done
+                [this_one, enums] = strtok(enums, ',');
+                list = [list, {strtrim(replace(this_one,'''',''))}];
+                if isempty(enums)
+                    done = true;
+                else
+                    enums = enums(2:end);
+                end
+
+            end
+
+        end
+
         function cur = execute(obj, sqlstr, args)
             % cur = execute(sql_command, [input arguments])
             % executes the sql_command and returns a cursor object.
