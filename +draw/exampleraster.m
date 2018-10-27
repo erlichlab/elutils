@@ -101,10 +101,10 @@ end
 
 
 if iscell(cnd)
-    cnd_nan = cellfun(@(x)isnan(x), cnd)
-    cnd(cnd_nan) = 'NaN';
+    cnd_nan = cellfun(@(x)any(isnan(x)), cnd); % use any to deal with character arrays.
+    cnd(cnd_nan) = {'NaN'};
     cnd = categorical(cnd);
-    n_cnd = catergories(cnd);
+    n_cnd = categories(cnd);
 else
     cnd = categorical(cnd);
     n_cnd = catergories(cnd);
@@ -177,7 +177,7 @@ for ci=1:numel(n_cnd)
     %     hh=line(x/1000,ymn(ci,:));
     % 	set(hh,'LineWidth',1,'LineStyle','-','Color',clrs{ci});
     if strcmpi(renderer,'opengl')
-        sh(ci)=shadeplot(x,ymn(ci,:)-yst(ci,:),ymn(ci,:)+yst(ci,:),{clrs{ci},psthax,0.3});
+        sh(ci)=draw.shadeplot(x,ymn(ci,:)-yst(ci,:),ymn(ci,:)+yst(ci,:),{clrs{ci},psthax,0.3});
         % lh=line(x,ymn(ci,:),'Color',clrs{ci},'LineWidth',2);
     else
         if errorbars
@@ -203,7 +203,7 @@ for ci=1:numel(n_cnd)
     
    
     
-    legstr{ci}=[num2str(n_cnd(ci)) ', n=' num2str(sampz)];
+    legstr{ci}=[n_cnd{ci} ', n=' num2str(sampz)];
     
 end
 
