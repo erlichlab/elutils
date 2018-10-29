@@ -107,7 +107,7 @@ if iscell(cnd)
     n_cnd = categories(cnd);
 else
     cnd = categorical(cnd);
-    n_cnd = catergories(cnd);
+    n_cnd = categories(cnd);
 end
 
 raster_height=total_height-psth_height;
