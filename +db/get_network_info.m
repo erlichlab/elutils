@@ -21,7 +21,7 @@ try
     
     keeps=zeros(size(IA));
     for ix=1:numel(IA)
-        if strfind(class(IA(ix)),'4') % this is an IPv4 address
+        if contains(class(IA(ix)),'4') % this is an IPv4 address
             ip=char(IA(ix).getHostAddress);
             if ip(1)=='0' || isequal(ip,'127.0.0.1') || isequal(ip,'127.0.1.1') % ignore localhost and microsoft tv/video connector
                 keeps(ix)=0;
@@ -46,16 +46,22 @@ try
     
     
     ip=char(IA(good_IA).getHostAddress);
-    ni=NetworkInterface.getByInetAddress(IA(good_IA));
-    if ~isempty(ni)
-    CA=double(ni.getHardwareAddress);
-    hostname=char(IA(good_IA).getHostName);
-    for hx=1:6
-        mac(2*hx-1:2*hx)=dec2hex(mod(CA(hx),2^8),2);
-    end
-    end
+    if nargout>1
+        ni=NetworkInterface.getByInetAddress(IA(good_IA));
     
+        if ~isempty(ni)
+            CA=double(ni.getHardwareAddress);
+            hostname=char(IA(good_IA).getHostName);
+            try
+                for hx=1:6
+                    mac(2*hx-1:2*hx)=dec2hex(mod(CA(hx),2^8),2);
+                end
+            catch
+                mac = '00:00:00:00:00:00';
+            end
+        end
+    end
     
 catch
-    showerror;
+    utils.showerror;
 end
