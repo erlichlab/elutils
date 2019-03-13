@@ -31,8 +31,8 @@ for x = 1:size(statetable,1)
     plot_state(ax,statetable(x,:), -0.2, max(statetable.stop_state)+0.2, 9.5-x)
 end
 
-plot(ax,[0 0.5],[x-1 x-1],'k','LineWidth',2);
-sh = text(0.1,x-1.5,'0.5 s');
+plot(ax,[0 0.5],[9-x 9-x],'k','LineWidth',2);
+sh = text(0.25,8.5-x,'0.5 s');
 sh.HorizontalAlignment = 'center';
 
 ax.Visible = 'off';
