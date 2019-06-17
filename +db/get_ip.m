@@ -8,9 +8,9 @@ elseif ismac
     ind = strfind(p,'inet ');
     indshift = 5;
 else
-    [r,p] = system('ifconfig');
-    ind = strfind(p,'inet addr:');
-    indshift = 10;
+    [r,p] = system('ip route get 1 | grep -oP "src \K\S+"');
+    ip = p;
+    return;
 end
 %%
 ipind = 1;
