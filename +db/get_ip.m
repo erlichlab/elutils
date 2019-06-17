@@ -9,7 +9,7 @@ elseif ismac
     indshift = 5;
 else
     [r,p] = system('ip route get 1 | grep -oP "src \K\S+"');
-    ip = p;
+    ip = strtrim(p);
     return;
 end
 %%
