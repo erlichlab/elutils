@@ -50,12 +50,17 @@ t=t(:);
 
 
 % deal with vararin
-opts.plotthis=1;
-opts.post_mask=+inf;
-opts.pre_mask=-inf;
-opts.events=[];   % this should be a struct with name, 
+% opts.plotthis=1;
+% opts.post_mask=+inf;
+% opts.pre_mask=-inf;
+% opts.events=[];   % this should be a struct with name, 
 
-parseargs(varargin,opts,{},1);
+iod = @utils.inputordefault;
+plotthis = iod('plotthis',1,varargin);
+post_mask = iod('post_mask',+inf,varargin);
+pre_mask = iod('pre_mask',-inf,varargin);
+events = iod('events',[],varargin);
+%parseargs(varargin,opts,{},1);
 
 if isscalar(post_mask)
     post_mask=repmat(post_mask, size(r));

@@ -29,35 +29,35 @@ function [ras,R]=exampleraster(ev, ts,varargin)
 %
 
 corner=[];  % this is necessary because corner is a function
-pairs={'pre'        3;...
-    'post'       3;...
-    'binsz'      0.01;...
-    'cnd'        1;...
-    'meanflg'    0;...
-    'krn'        0.1;...
-    'ax_handle'  [];...
-    'legend_str' '';...
-    'renderer', 'painters';...
-    'ref_label', 'REF';...
-    'psth_height', 0.248;...
-    'total_height' 0.8;...
-    'corner'       [0.1 0.1];...
-    'ax_width'      0.55;...
-    'font_name'	   'Helvetica';...
-    'font_size'		14;...
-    'legend_pos'     [0.73 0.1 0.2 0.15];...
-    'clrs'	{'b','m','r','c','k','g','y',[1 0.5 0],[0.5 0.5 0.5]};...
-    'x_label','';...
-    'pre_mask', -inf;...
-    'post_mask',+inf;...
-    'cout',[];...
-    'stim_back',[];...
-    'sb_clr',[0.8 0.8 0.4];...
-    'errorbars', 1;...
-    'testfunc', [];...
-    'show_yinfo', 1;...
-    'sortby', [];
-    }; parseargs(varargin,pairs,{},1);
+iod = @utils.inputordefault;
+pre = iod('pre',3,varargin);
+post = iod('post',3,varargin);
+binsz = iod('binsz',0.01,varargin);
+cnd = iod('cnd',1,varargin);
+meanflg = iod('meanflg',0,varargin);
+krn = iod('krn',0.1,varargin);
+ax_handle = iod('ax_handle',[],varargin);
+legend_str = iod('legend_str','',varargin);
+renderer =iod('renderer','painters',varargin);
+ref_label=iod('ref_label','REF',varargin);
+psth_height=iod('psth_height',0.248,varargin);
+total_height=iod('total_height',0.8,varargin);
+corner=iod('corner',[0.1 0.1],varargin);
+ax_width=iod('ax_width',0.55,varargin);
+font_name=iod('font_name','Helvetica',varargin);
+font_size=iod('font_size',14,varargin);
+legend_pos=iod('legend_pos',[0.73 0.1 0.2 0.15],varargin);
+clrs=iod('clrs',{'b','m','r','c','k','g','y',[1 0.5 0],[0.5 0.5 0.5]},varargin);
+x_label=iod('x_label','',varargin);
+pre_mask=iod('pre_mask', -inf,varargin);
+post_mask=iod('post_mask',+inf,varargin);
+cout=iod('cout',[],varargin);
+stim_back=iod('stim_back',[],varargin);
+sb_clr=iod('sb_clr',[0.8 0.8 0.4],varargin);
+errorbars=iod('errorbars',1,varargin);
+testfunc=iod('testfunc',[],varargin);
+show_yinfo=iod('show_yinfo',1,varargin);
+sortby=iod('sortby',[],varargin);
 
 
 set(gcf, 'Renderer',renderer);
@@ -95,9 +95,21 @@ if isscalar(krn)
     krn=krn/sum(krn);
 end
 
+if numel(cnd)==1
+    cnd=ones(1,ntrials);
+end
 
 
-n_cnd=unique(cnd(~isnan(cnd)));
+if iscell(cnd)
+    cnd_nan = cellfun(@(x)any(isnan(x)), cnd); % use any to deal with character arrays.
+    cnd(cnd_nan) = {'NaN'};
+    cnd = categorical(cnd);
+    n_cnd = categories(cnd);
+else
+    cnd = categorical(cnd);
+    n_cnd = categories(cnd);
+end
+
 raster_height=total_height-psth_height;
 y_ind=psth_height+corner(2)+0.005;
 
@@ -107,13 +119,11 @@ hold(psthax,'on');
 set(psthax,'FontName',font_name);
 set(psthax,'FontSize',font_size)
 
-if numel(cnd)==1
-    cnd=ones(1,ntrials);
-end
 
 
-[Y,x,W]=warpfilter(ev,ts,krn,'pre',pre,'post',post,'kernel_bin_size',binsz);
-
+%[Y,x,W]=warpfilter(ev,ts,krn,'pre',pre,'post',post,'kernel_bin_size',binsz);
+[Y,x]=stats.spike_filter(ev,ts,krn,'pre',pre,'post',post,'kernel_bin_size',binsz);
+W = ts;
 
 for ci=1:numel(n_cnd)
     sampz=sum(cnd==n_cnd(ci));
@@ -127,7 +137,7 @@ for ci=1:numel(n_cnd)
     
     y=Y(ref,:);
     
-    [y2,x2]=rasterplot(ev(ref,1),W,pre,post,'pre_mask',pre_mask(ref),'post_mask',post_mask(ref),'plotthis',0);
+    [y2,x2]=draw.rasterplot(ev(ref,1),W,pre,post,'pre_mask',pre_mask(ref),'post_mask',post_mask(ref),'plotthis',0);
     ras(ci)=axes('Position',[corner(1) y_ind ax_width height_per_trial*sampz]);
     y_ind=y_ind+height_per_trial*sampz+0.001;
     
@@ -157,7 +167,7 @@ for ci=1:numel(n_cnd)
     end
     %% Calculate the mean and ci of the
     
-    [y x]=maskraster(x,y,pre_mask(ref),post_mask(ref));
+    [y x]=draw.maskraster(x,y,pre_mask(ref),post_mask(ref));
     
     ymn(ci,:) = nanmean(y,1);
     yst(ci,:)= stats.nanstderr(y,1);
@@ -167,7 +177,7 @@ for ci=1:numel(n_cnd)
     %     hh=line(x/1000,ymn(ci,:));
     % 	set(hh,'LineWidth',1,'LineStyle','-','Color',clrs{ci});
     if strcmpi(renderer,'opengl')
-        sh(ci)=shadeplot(x,ymn(ci,:)-yst(ci,:),ymn(ci,:)+yst(ci,:),{clrs{ci},psthax,0.3});
+        sh(ci)=draw.shadeplot(x,ymn(ci,:)-yst(ci,:),ymn(ci,:)+yst(ci,:),{clrs{ci},psthax,0.3});
         % lh=line(x,ymn(ci,:),'Color',clrs{ci},'LineWidth',2);
     else
         if errorbars
@@ -193,7 +203,7 @@ for ci=1:numel(n_cnd)
     
    
     
-    legstr{ci}=[num2str(n_cnd(ci)) ', n=' num2str(sampz)];
+    legstr{ci}=[n_cnd{ci} ', n=' num2str(sampz)];
     
 end
 
