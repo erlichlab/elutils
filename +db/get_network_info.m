@@ -17,6 +17,10 @@ catch
 end
 
 
+if ~exist('contains','file')
+    eval('contains=@(x,y)cellfun(@(a)any(strfind(a,y)),{x});')
+end
+
 try
     
     keeps=zeros(size(IA));

@@ -1,4 +1,4 @@
-function [y x] = spike_filter(ref, ts, kernel, varargin)
+function [y, x] = spike_filter(ref, ts, kernel, varargin)
 % function [y x] = spike_filter(ref, ts, kernel, varargin)
 %
 % produces smoothed single-trial peth's in a window [-pre post] from each
@@ -41,7 +41,7 @@ buffered_pre=pre+offset*kernel_bin_size;
 x = -buffered_pre:kernel_bin_size:post;
 y = zeros(length(ref), numel(x)-1); 
 ts=ts(:)';   % make ts a row vector;
-for rx = 1:length(ref),
+for rx = 1:length(ref)
     if isnan(ref(rx))
         y(rx,:)=y(rx,:)+nan;
     else
@@ -50,12 +50,12 @@ for rx = 1:length(ref),
         
         spks = stats.qbetween(ts, start, fin) - ref(rx); % spike times relative to ref
         
-        if ~isempty(spks),
+        if ~isempty(spks)
             ty = histc(spks,x);
             y(rx, :) = ty(1:end-1);
-        end;
+        end
     end
-end;
+end
 
 y=[y zeros(numel(ref), offset)];  % pad with extra zeros
 
