@@ -1,9 +1,6 @@
 function var = constrain_var(var, low, high)
 
-if var < low
-	var = low;
-end
+assert(high>=low,'In contrain_var the upper limit must be greater than (or equal to) the lower limit');
 
-if var > high
-	var = high;
-end
+var(var<low)=low;
+var(var>high)=high;
