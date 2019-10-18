@@ -4,8 +4,8 @@ function y = inhomopoissrnd(intens, varargin)
 % ===========
 % intens        an intesity function. Should take an input (or vector of
 %               inputs) and return lambda (in events/second) of the process at that time.
-% 'pre'         [ 0] The time at which to start the interval of simlution
-% 'post'        [ 1] The time at which to end the interval of simlution
+% 'pre'         [ 0] The time at which to start the interval of simulation
+% 'post'        [ 1] The time at which to end the interval of simulation
 % 'binsize'     [0.01] The binsize to sample at (only really important for 
 %               non-monotonic processes, where the estimate of the max rate
 %               is influences by resolution.
@@ -15,6 +15,8 @@ function y = inhomopoissrnd(intens, varargin)
 %               the events.
 % 'noise'       a function that takes a size input and will be added to the
 %               intens function.
+% 'refract_dur' [0] if >0 will shift events so that there are no events
+%               closer than this value (in seconds)
 %
 % intens should be in units of events / second
 %
@@ -36,7 +38,7 @@ if nargin==0
     post = 20;
     offset = [0:40:2222];
     noise = @(x)randn(x)*5;
-    events = stats.inhomopoissrnd(lambda, 'pre',-5,'post',post,'offset',offset,'noise',noise);
+    events = stats.inhomopoissrnd(lambda, 'pre',-5,'post',post,'offset',offset,'noise',noise,'refract_dur',0.001);
     krn = normpdf(-3:0.001:3, 0,1);
     kbs = 0.001;
     draw.exampleraster(offset(:), events,'pre',1,'post',20,'errorbars',0);
@@ -52,6 +54,8 @@ inpd = @utils.inputordefault;
 [binsize, args] =   inpd('binsize',0.01,args);
 [offset, args] =    inpd('offset',0,args);
 [noise, args] =     inpd('noise',@zeros,args);
+[refract_dur, args] =     inpd('refract_dur',0,args); % Highly discouraged
+
 if ~isempty(args)
     fprintf(2,'Unused arguments in inhomopoissrnd:')
     disp(args)
@@ -68,7 +72,7 @@ T = post-pre;
 maxlambda = max(intens(timex)); % generate homogeneouos poisson process
 max_events = ceil(1.5*T*maxlambda);
 u = rand(max_events, numel(offset));
-y = cumsum(-(1/maxlambda)*log(u))+pre; %points of homogeneous pp
+y = cumsum(-(1/maxlambda)*log(u) + refract_dur+rand(size(u))*refract_dur*2)+pre; %points of homogeneous pp
 %y = y(y<T); n=length(y); % select those points less than T
 y(y>=post)=NaN;
 m = intens(y) + noise(size(y)); % evaluates intensity function
@@ -76,4 +80,3 @@ y(rand(size(y))>m/maxlambda) = NaN; % filter out some points
 y = bsxfun(@plus,y,reshape(offset,1,numel(offset)));
 y = sort(y(:));
 y(isnan(y))=[];
-end
