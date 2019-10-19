@@ -29,8 +29,11 @@ if nargin==0 % Part of help!
     n_trials = 100;
     trial_starts = linspace(0,500, n_trials )';
     event_ts = [trial_starts trial_starts + rand(size(trial_starts))+0.1];
-    event_weights = randi([-3 5], n_trials, numel(kernel));
-    [spktimes, rate_function] = stats.simulate_spikes(event_ts, kernel, event_weights,'krn_bin_size',krn_bin_size);
+    event_weights = randi([-1 5], n_trials, numel(kernel))*3;
+    [spktimes, rate_function] = stats.simulate_spikes(event_ts, kernel, event_weights,'krn_bin_size',krn_bin_size,'baseline',20);
+    figure; draw.exampleraster(event_ts(:,1), spktimes,'cnd',event_weights(:,1),'errorbars',0)
+    figure; draw.exampleraster(event_ts(:,2), spktimes,'cnd',event_weights(:,2),'errorbars',0)
+
     return
     
 end
