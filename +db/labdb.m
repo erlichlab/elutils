@@ -70,6 +70,13 @@ classdef (Sealed) labdb < handle
             end
 
         end
+        
+        function list = column_names(obj,tablename)
+            out = obj.query('show columns from %s',{tablename});
+            list = out.COLUMN_NAME;
+            
+
+        end
 
         function cur = execute(obj, sqlstr, args)
             % cur = execute(sql_command, [input arguments])
