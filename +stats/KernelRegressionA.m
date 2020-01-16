@@ -47,7 +47,7 @@ methods
     fit(obj);
   end
   
-  function obj = generateCoreKernel(obj)
+  function obj = generateCoreKernel(obj) % tested, OK
     % To do the kernel regression we need a regression matrix to specify 
     % where each element of the kernel influences the firing rate.
     % We will start with the
@@ -91,11 +91,20 @@ methods
     else
       obj.core_kernel_matrix = zeros(obj.total_time_steps, obj.number_of_events*obj.kernel_bins + 1);
     end
+    
+    
+    kernel_matrix = zeros(obj.total_time_steps, obj.number_of_events*obj.kernel_bins); 
+    % just for the kernels. Deal with the baseline later
+    
     row_offset = floor(obj.kernel_bins/2);
     col_offset = floor(obj.kernel_dof/2);
-    event_index = floor(obj.event_times/obj.kernel_bin_size);
+    krn_offset = obj.kernel_dof;
+    event_index = floor((obj.event_times - min(obj.event_times(:))) /obj.kernel_bin_size); % Converts event_times to indices
+        
+    idx = sub2ind(size(kernel_matrix), row_idx, col_idx);
+    kernel_matrix(idx) = 1;
+    kernel_matrix = conv2(kernel_matrix, obj.core_kernel, 'same');
     
-
   end
   
 
@@ -114,6 +123,7 @@ methods
   end
   
   function kernels = get.kernels(obj)
+    % tested, OK
     kernels = obj.kernel_weights * obj.core_kernel';
   end
    

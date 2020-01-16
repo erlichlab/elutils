@@ -36,7 +36,7 @@ for sx = 1:numel(scale)
     mdllow = mdl.Coefficients.Estimate - mdl.Coefficients.SE*1.96;
     mdlhigh = mdl.Coefficients.Estimate - mdl.Coefficients.SE*1.96;
     
-    fprintf(1,'fitglm %.3f [%.3f %.3f]\n', mdl.Coefficients.Estimate==this_lambda,'
+%    fprintf(1,'fitglm %.3f [%.3f %.3f]\n', mdl.Coefficients.Estimate==this_lambda,'
 end
     
     
@@ -44,7 +44,7 @@ figure(1); clf
 ax = draw.jaxes([0.1 0.1 0.3 0.3]);
 draw.errorplot(ax, bins, lambda, abs(lowci-lambda), highci-lambda);
 ax.XScale = 'log'; ax.YLim = [0 1.2*true_rate]; ax.XLim = [0.8*min(dur./scale) 1.2*max(dur./scale)];
-ax.XTick = 10.^[-1 0 1 2 3];
+ax.XTick = 10.^[-1 0 1 2 3 4];
 ylabel(ax,'\lambda (mean \pm ci)')
 xlabel('# of bins')
 draw.xhairs(ax,'r:',0,true_rate);
