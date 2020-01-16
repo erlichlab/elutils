@@ -100,7 +100,10 @@ methods
     col_offset = floor(obj.kernel_dof/2);
     krn_offset = obj.kernel_dof;
     event_index = floor((obj.event_times - min(obj.event_times(:))) /obj.kernel_bin_size); % Converts event_times to indices
-        
+    
+    row_idx = event_index(:) + row_offset;
+    col_idx = col(repmat((0:(obj.number_of_events-1))*krn_offset,obj.) + 
+
     idx = sub2ind(size(kernel_matrix), row_idx, col_idx);
     kernel_matrix(idx) = 1;
     kernel_matrix = conv2(kernel_matrix, obj.core_kernel, 'same');
