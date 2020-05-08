@@ -96,12 +96,17 @@ methods
     kernel_matrix = zeros(obj.total_time_steps, obj.number_of_events*obj.kernel_bins); 
     % just for the kernels. Deal with the baseline later
     
+    % We have a big matrix of zeros. We want to put the core_kernel
+    % everywhere there is an event. Our plan for doing this is to put a 1
+    % whereever we want the kernel and then convolve this with our
+    % core_kernel. We can then use this to estimate the kernel_weights.
+    
     row_offset = floor(obj.kernel_bins/2);
     col_offset = floor(obj.kernel_dof/2);
     krn_offset = obj.kernel_dof;
     event_index = floor((obj.event_times - min(obj.event_times(:))) /obj.kernel_bin_size); % Converts event_times to indices
     
-    row_idx = event_index(:) + row_offset;
+    row_idx = event_index(:) + row_offset; 
     col_idx = col(repmat((0:(obj.number_of_events-1))*krn_offset,obj.) + 
 
     idx = sub2ind(size(kernel_matrix), row_idx, col_idx);

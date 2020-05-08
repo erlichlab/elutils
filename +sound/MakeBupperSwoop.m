@@ -65,7 +65,7 @@ pairs = { ...
   'F2_lead_time'        []   ; ...
   'PPfilter_fname'      ''   ; ...
   'bup_width'            5   ; ...
-}; parseargs(varargin, pairs);
+}; utils.parseargs(varargin, pairs);
 
 if isempty(F1_lead_time), F1_lead_time = -0.1*F1_loc_factor; end;
 if isempty(F2_lead_time), F2_lead_time = -0.1*F2_loc_factor; end;
@@ -142,7 +142,7 @@ Timer = sin(Phi);
 Beep = zeros(size(Phi));
 
 u = find(diff(sign(Timer)) > 0); u = [1 u];
-bup = singlebup(SRate, Att, 'PPfilter_fname', PPfilter_fname, 'width', bup_width); 
+bup = sound.singlebup(SRate, Att, 'PPfilter_fname', PPfilter_fname, 'width', bup_width); 
 lbup = length(bup);
 for i=1:length(u),
    Beep(u(i):u(i)+lbup-1) = bup;

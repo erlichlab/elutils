@@ -5,7 +5,7 @@
 function [snd] = singlebup(srate, att, varargin)
    
    width=5    ;  
-   ramp,        =  2    ;  
+   ramp       =  2    ;  
    basefreq     =  2000 ;  
    ntones       =  5    ;  
    PPfilter_fname= ''    ; 
