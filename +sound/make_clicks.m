@@ -18,7 +18,7 @@ if ~isempty(varargin)
    fprintf(2,'\n');
 end
 
-wav = zeros(SF*duration,1);
+wav = zeros(1,SF*duration);
 click = sin((0:(1/SF):click_dur)*2*pi*click_freq);
  
 click_length = numel(click);
