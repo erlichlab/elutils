@@ -22,13 +22,13 @@ function fhand=shadeplot2(x,y1,y2,varargin)
 % Written by Joseph Jun, 09.23.2008
 %
 
-pairs={ 'colors'    [0.498*ones(1,3); 0.898*ones(1,3); 0.647*ones(1,3)];...
-        'fhand'     [];...
-        };
-    parseargs(varargin, pairs);
-    if isempty(fhand)
+inpd = @utils.inputordefault;
+colors = inpd('colors',[0.498*ones(1,3); 0.898*ones(1,3); 0.647*ones(1,3)],varargin);
+fhand  = inpd('fhand', [], varargin);
+
+if isempty(fhand)
     fhand=axes; 
-    end
+end
 if size(x,1)>size(x,2),   x=x'; end
 if size(y1,1)>size(y1,2), y1=y1'; end
 if size(y2,1)>size(y2,2), y2=y2'; end
