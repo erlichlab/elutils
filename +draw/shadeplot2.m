@@ -188,7 +188,7 @@ for k=1:ninds
       end
   end
   
-  patch(px,py,colors(3,:),'linestyle','none');
+  patch(fhand,px,py,colors(3,:),'linestyle','none');
   
 end
 
