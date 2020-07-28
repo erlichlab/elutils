@@ -12,6 +12,7 @@ num_bins=inpd('n_bins',17,varargin);
 bins=inpd('bins',[],varargin);
 ax=inpd('ax',[],varargin);
 x_lim=inpd('x_lim',[],varargin);
+y_lim=inpd('y_lim',[],varargin);
 zero=inpd('zero',0,varargin);
 
 gd=~isnan(x);
@@ -45,9 +46,13 @@ xlim(ax,x_lim);
 set(ax, 'YAxisLocation','left');
 set(hh(1),'FaceColor','k')
 set(hh(2),'FaceColor',[1 1 1])
-set(ax,'box','off','YLim',[0 maxy])
+if isempty(y_lim)
+    y_lim = [0 maxy];
+end
+
+set(ax,'box','off','YLim',y_lim)
 set(ax,'Color','none')
-text(getx,gety,[num2str(round(100*mean(x_sig))) '% p<0.05'])
+text(ax, getx(ax),gety(ax),[num2str(round(100*mean(x_sig))) '% p<0.05'])
 
 x_mean=nanmean(x);
 [xt_sig,~,B]=stats.bootmean(x-zero);
@@ -57,8 +62,8 @@ x_mean=nanmean(x);
 if xt_sig<0.05
     y_lim=ylim(ax);
     y_lim=y_lim(2);
-    plot(ax,x_mean,0.9*y_lim,'.k','MarkerSize',6);
-    plot(ax,[CI(1) CI(2)], [0.9*y_lim 0.9*y_lim], '-k');
+    plot(ax,x_mean, maxy,'.k','MarkerSize',6);
+    plot(ax,[CI(1) CI(2)], [maxy maxy], '-k');
     
 end
  
@@ -68,13 +73,13 @@ b2b_dist=x(2)-x(1);
 y=x+0.5*b2b_dist;
 y=y(1:end-1);
 
-function y=getx
-x=xlim;
+function y=getx(ax)
+x=xlim(ax);
 y=0.1*(x(2)-x(1))+x(1);
 
-function y=gety
-x=ylim;
-y=0.9*(x(2)-x(1))+x(1);
+function y=gety(ax)
+x=ylim(ax);
+y=1.1*(x(2)-x(1))+x(1);
 
 
 
