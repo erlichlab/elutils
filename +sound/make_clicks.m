@@ -45,7 +45,8 @@ else
     end
     click_times(click_times>length(wav)) = length(wav);
     wav(round(click_times))=1;
-    wav(wav>1) = 1;%for insurance
 end
 wav = conv(wav, click);
+wav(wav>1) = 1;%for insurance
+wav(wav<-1) = -1;
 
