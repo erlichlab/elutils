@@ -61,9 +61,9 @@ x_mean=nanmean(x);
 
 if xt_sig<0.05
     y_lim=ylim(ax);
-    y_lim=y_lim(2);
-    plot(ax,x_mean, maxy,'.k','MarkerSize',6);
-    plot(ax,[CI(1) CI(2)], [maxy maxy], '-k');
+    y_pos=0.85 * y_lim(2);
+    plot(ax,x_mean, y_pos,'.k','MarkerSize',6);
+    plot(ax,[CI(1) CI(2)], [y_pos y_pos], '-k');
     
 end
  
@@ -75,7 +75,7 @@ y=y(1:end-1);
 
 function y=getx(ax)
 x=xlim(ax);
-y=0.1*(x(2)-x(1))+x(1);
+y=0.03*(x(2)-x(1))+x(1);
 
 function y=gety(ax)
 x=ylim(ax);
