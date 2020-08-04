@@ -32,7 +32,7 @@ kxloc=xloc(keeps);
 new_tick=sort([kxloc(:); curr_tick(:)]);
 
 
-set(ax,'XTick',new_tick','XTickLabel',[]);
+set(ax,'XTick',unique(new_tick),'XTickLabel',[]);
 
 ht=ht(keeps);
 
