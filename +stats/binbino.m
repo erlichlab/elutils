@@ -25,27 +25,32 @@ plot_it=false;
 plot_fit='';
 plot_fit_x0=[0 1 0 10];
 n_bins=10;
+alpha=0.01;
 clr='k';
 func=@nanmean;
 
 utils.overridedefaults(who,varargin);
+
 x=x(:);
 y=y(:);
+bad = isnan(x) | isnan(y);
+x(bad)=[];
+y(bad)=[];
+
 ytob=nan+y;
 if isempty(bin_e)
     pbins=linspace(0,100,n_bins+1);
     bin_e=prctile(x,pbins);
 end
-
 binc=(bin_e(2:end)+bin_e(1:end-1))/2;
 mu=nan(size(binc));
 se=nan(size(binc));
 
 assert(all(y==0 | y==1 | isnan(y)),'This is for binomial data, use binned instead');
 
-[n,yx]=histc(x,bin_e);
+[n,~,yx]=histcounts(x,bin_e);
 
-for nx=1:(numel(n)-1)
+for nx=1:(numel(n))
     tmp=func(y(yx==nx));
     if isempty(tmp)
         tmp=nan;
@@ -53,14 +58,13 @@ for nx=1:(numel(n)-1)
     mu(nx)=tmp;
     
     ytob(yx==nx)=nx;
-    [~,ci]=binofit(nansum(y(yx==nx)),sum(yx==nx));         
+    [~,ci]=binofit(nansum(y(yx==nx)),sum(yx==nx), alpha);         
     lowci(nx)=ci(1);
     highci(nx)=ci(2);
     
     % this is bad for low n.  
 end
 
-n=n(1:end-1);
 
 if plot_it
     
