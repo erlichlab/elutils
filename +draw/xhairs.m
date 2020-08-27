@@ -29,14 +29,15 @@ xlim=get(ax, 'XLim');
 ylim=get(ax, 'YLim');
 
 hold(ax,'on')
-h(1)=plot(ax,[x0 x0],[ylim(1) ylim(2)],s);
-h(2)=plot(ax,[xlim(1) xlim(2)],[ y0 y0 ],s);
+h(axx,1)=plot(ax,[x0 x0],[ylim(1) ylim(2)],s);
+h(axx,2)=plot(ax,[xlim(1) xlim(2)],[ y0 y0 ],s);
 if ~top
 ch=get(ax,'Children');
 set(ax,'Children',[ch(3:end); ch(1:2)])
 end
 set(ax,'NextPlot',oldhold);
 end
+h = squeeze(h);
 
 
 
