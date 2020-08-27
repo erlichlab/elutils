@@ -29,7 +29,7 @@ for tx=1:numel(ht)
 end
 
 kxloc=xloc(keeps);
-new_tick=sort([kxloc(:); curr_tick(:)]);
+new_tick=unique([kxloc(:); curr_tick(:)]);
 
 
 set(ax,'XTick',new_tick','XTickLabel',[]);
