@@ -333,7 +333,13 @@ if nargin == 0
     
     cfgname = 'client';
 end
-cfgfile = '~/.dbconf';
+if ispc
+    cfgpath = getenv('USERPROFILE');
+else
+    cfgpath = getenv('HOME');
+end
+
+cfgfile = fullfile(cfgpath,'.dbconf');
 
 if ~exist(cfgfile,'file')
     error('labdb:dbconf','.dbconf file not found in home directory');
