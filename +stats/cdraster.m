@@ -28,6 +28,8 @@ if numel(cdtimes)~=numel(cdvals)
         error("Not an even # of samples per timestep")
         return
     end
+else
+    samples_per_ts = 1;
 end
 
 
