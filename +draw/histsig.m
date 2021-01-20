@@ -5,15 +5,17 @@ function [ hx]=histsig(x, x_sig, varargin)
 
 
 inpd = @utils.inputordefault;
-origin=inpd('origin', 0.1, varargin);
-wdth=inpd('width',0.2,varargin);
-hist_h=inpd('height',0.180,varargin);
-num_bins=inpd('n_bins',17,varargin);
-bins=inpd('bins',[],varargin);
-ax=inpd('ax',[],varargin);
-x_lim=inpd('x_lim',[],varargin);
-y_lim=inpd('y_lim',[],varargin);
-zero=inpd('zero',0,varargin);
+[origin, args]=inpd('origin', 0.1, varargin);
+[wdth, args]=inpd('width',0.2,args);
+[hist_h, args]=inpd('height',0.180,args);
+[num_bins, args]=inpd('n_bins',17,args);
+[bins, args]=inpd('bins',[],args);
+[ax, args]=inpd('ax',[],args);
+[x_lim, args]=inpd('x_lim',[],args);
+[y_lim, args]=inpd('y_lim',[],args);
+[normed, args]=inpd('normed',false,args);
+[zero, args]=inpd('zero',0,args);
+inpd(args)
 
 gd=~isnan(x);
 x=x(gd);
@@ -39,6 +41,11 @@ if isempty(bins)
 end
 nsig=histcounts(x(x_sig==0), bins);
 sig=histcounts(x(x_sig==1), bins);
+if normed
+    total = sum(nsig) + sum(sig);
+    nsig = nsig / total;
+    sig = sig / total;
+end
 maxy=max(nsig(:)+sig(:))*1.3;
 cbins=edge2cen(bins);
 [hh]=bar(ax,cbins, [sig(:) nsig(:)],'stacked');

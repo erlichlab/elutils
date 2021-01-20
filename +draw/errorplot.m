@@ -3,6 +3,12 @@ function h=errorplot(varargin)
 % h=errorplot(x,y,e, options)
 % h=errorplot(x,y,u,l,options)
 % h=errorplot(ax, .....)
+% options:
+% LineStyle = 'none';
+% Marker = 'o';
+% Color='k'; 
+% LineWidth=1;
+% asLimits = false;
 
 toparse=nargin;
 
