@@ -9,6 +9,7 @@ mark2='o';
 ax=[];
 xlabels={'Control' 'Exp'};
 y_lim=[];
+lineclr='k';
 
 utils.overridedefaults(who,varargin);
 
@@ -27,7 +28,7 @@ XX=[ones(num_p,1)  ones(num_p,1)+1 ones(num_p,1)+nan];
 
 LL=LL'; LL=LL(:);
 XX=XX'; XX=XX(:);
-hline=plot(ax,XX,LL,'k-');
+hline=plot(ax,XX,LL,'-','Color',lineclr);
 
 h1=plot(ax,ones(size(x)),x,'Marker',mark1,'Color',clr1,'MarkerFaceColor',clr1,'MarkerEdgeColor',eclr1,'LineStyle','none');
 h2=plot(ax,ones(size(x))*2,y,'Marker',mark2,'Color',clr2,'MarkerFaceColor',clr2,'MarkerEdgeColor',eclr2,'LineStyle','none');
