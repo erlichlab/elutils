@@ -39,5 +39,5 @@ function ok = sendmattermost(channel,message,varargin)
 		end
 	end
 
-	ok = webwrite(url, 'payload', payload);
+	ok = webwrite(url, 'payload', payload, weboptions('CertificateFilename',[]));
 
