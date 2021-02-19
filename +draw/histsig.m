@@ -1,5 +1,3 @@
-
-
 function [ hx]=histsig(x, x_sig, varargin)
 % [ hx]=histsig(x, x_sig,  x_lim)
 
@@ -23,13 +21,13 @@ x_sig=x_sig(gd);
 x_lim_b=[min(x)-0.1 max(x)+0.1];
 
 if isempty(x_lim)
-	x_lim=x_lim_b;
+    x_lim=x_lim_b;
 end
-	
+    
 
 
 if isempty(ax)
-    ax=draw.jaxes('Position',[origin origin wdth hist_h]);
+    ax=draw.jaxes([origin origin wdth hist_h]);
 end
 
 marker_size=zeros(size(x))+12;
@@ -59,7 +57,8 @@ end
 
 set(ax,'box','off','YLim',y_lim)
 set(ax,'Color','none')
-text(ax, getx(ax),gety(ax),[num2str(round(100*mean(x_sig))) '% p<0.05'])
+text(ax, getx(ax),gety(ax),sprintf('%d%% p<.05, n=%d',round(100*mean(x_sig)),sum(~isnan(x))))
+%text(ax, getx(ax),gety(ax),[num2str(round(100*mean(x_sig))) '% p<0.05'])
 
 x_mean=nanmean(x);
 [xt_sig,~,B]=stats.bootmean(x-zero);
