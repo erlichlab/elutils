@@ -7,7 +7,7 @@ function hout=shadeplot(x,y1,y2,opt)
 if nargin <4
     h=axes;
     clr='k';
-    alp=0.5;
+    alp=1;
 else
     h=opt{2};
     alp=opt{3};
@@ -22,6 +22,8 @@ Y=[y1, y2];
 
 h1=area(h,x,Y);
 set(h1(2),'EdgeColor','none','FaceColor',clr);
-%alpha(h1(2),alp);
+if alp < 1
+    alpha(h1(2),alp);
+end
 set(h1(1),'EdgeColor','none','FaceColor','none');
 hout=h1(2);
