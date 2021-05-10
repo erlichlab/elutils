@@ -72,7 +72,7 @@ for dx=1:numel(datumM)
         % if there are repeat values in sd_ps, closest returns the max of the indices
         % of these.  But we actually want the min of these indices so we find the
         % others which have the same value and take the min of these.
-        if closest==-1 && high
+        if closest<=0
             if high
                 y(dx)=1;
             else
