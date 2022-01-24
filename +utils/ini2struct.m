@@ -29,6 +29,10 @@ while ~feof(f)                              % and read until it ends
         Val = strtok(Val, '"');
     elseif Val(1)==''''                     % single-quoted string
         Val = strtok(Val, '''');
+    elseif Val(1)=='{' && Val(end)=='}' % consider loading as a cell struct
+        eval(sprintf('Val=%s;',Val));
+    elseif Val(1)=='{' && Val(end-1)=='}' % consider loading as a cell struct
+        eval(sprintf('Val=%s',Val));
     else
         Val = strtok(Val, ';');             % remove inline comment
         Val = strtok(Val, '#');             % remove inline comment
