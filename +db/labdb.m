@@ -180,7 +180,9 @@ classdef (Sealed) labdb < handle
                 out = [];
             else
                 data = fetch(cur);
-                if cur.rows <= 0
+                %if cur.rows <= 0
+                %cur.rows have been removed for the lastest version of MATLAB
+                if isempty(cur.Data)
                     out = {};
                 else
                     out = data.Data;
