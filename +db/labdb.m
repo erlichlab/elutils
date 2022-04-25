@@ -184,6 +184,8 @@ classdef (Sealed) labdb < handle
                 %cur.rows have been removed for the lastest version of MATLAB
                 if isempty(cur.Data)
                     out = {};
+                elseif iscell(cur.Data) && strcmp(cur.Data{1},'No Data')
+                    out = {};
                 else
                     out = data.Data;
                 end
