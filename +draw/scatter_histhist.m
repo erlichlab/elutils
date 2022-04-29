@@ -15,7 +15,8 @@ function [hm, hx, hy]=scatter_histhist(x, x_sig, y,y_sig, varargin)
 
 
 iod = @utils.inputordefault;
-org=iod('org',0.15, varargin);
+org=iod('org',0.15, varargin);%by default, orgy=org(x)
+orgy=iod('orgy',[], varargin);
 wdth=iod('width',0.5,varargin);
 hist_h=iod('hist_height',0.2,varargin);
 num_bns=iod('num_bins',17,varargin);
@@ -28,16 +29,19 @@ y_lim_b=[min(y)-0.1 max(y)+0.1];
 x_lim = iod('x_lim',x_lim_b,varargin);
 y_lim = iod('y_lim',y_lim_b,varargin);
 
+if isempty(orgy)
+    orgy = org;
+end
 
 figure
 hm=draw.jaxes;
-hm.Position = [org org wdth wdth];
+hm.Position = [org orgy wdth wdth];
 set(hm,'Xlim',[-1 1]);
 set(hm,'Ylim',[-1 1]);
 
 
-hx=axes('Position',[org org+wdth+0.01 wdth hist_h]);
-hy=axes('Position',[org+wdth+0.01 org hist_h wdth]);
+hx=axes('Position',[org orgy+wdth+0.01 wdth hist_h]);
+hy=axes('Position',[org+wdth+0.01 orgy hist_h wdth]);
 
 marker_size=zeros(size(x))+12;
 marker_size(x_sig==1)=24;
