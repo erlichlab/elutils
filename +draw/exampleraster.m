@@ -208,6 +208,7 @@ for ci=1:numel(n_cnd)
 end
 
  cur_ylim=get(psthax,'YLim');
+ cur_ylim(cur_ylim<0) = 0;% y-axis not going to negative, this is a problem at somewhere else and we will fix that later
  ylim(psthax,[cur_ylim(1) max(peaky)*1.15]);
  
     for rx=1:nrefs
@@ -224,8 +225,8 @@ set(psthax,'XTick',xticks);
 set(ras,'XTick',xticks);
 
 if ~isempty(legend_pos) && ~isempty(legend_str)
-[lh,oh]=legend(sh,legend_str);
-legend boxoff
+    [lh,oh]=legend(sh,legend_str);
+    %legend boxoff %this code will generate an unexpected legend
 % keyboard
 set(lh,'Position',legend_pos);
 end
