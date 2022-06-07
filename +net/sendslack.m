@@ -12,12 +12,12 @@ function ok = sendslack(message,varargin)
 
 	url = inpd('url',[],varargin);
 	payload = inpd('payload',[],varargin);
-	channel = '#bot-notices';
+	%channel = '#bot-notices';
 
 	if isempty(payload)
-		payload = sprintf('{"channel":"%s", "text":"%s"}',channel,message);
+		payload = sprintf('{"text":"%s"}',message);
 	else
-		if ~isempty(channel) || ~isempty(message)
+		if ~isempty(message)
 			fprintf(2,'Using payload and ignoring channel and message content.');
 		end
 	end

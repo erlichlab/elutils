@@ -134,7 +134,7 @@ classdef (Sealed) labdb < handle
             end
             out = query(obj,sqlstr,args);
             varargout = cell(1,nargout);
-            if isempty(out)
+            if isempty(out) || strcmp(out{1,1},'No Data')
                 return;
             end
                 
