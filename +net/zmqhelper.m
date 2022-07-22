@@ -69,6 +69,12 @@ classdef zmqhelper < handle
         function out = waitformsg(obj)
             out = obj.socket.recvStr(); % The one gets msg with blocking
         end
+
+        function addr, out = waitforjson(obj)
+            msg = char(waitformsg(obj)); % get msg with blocking and convert from java string to char
+            [addr, jstr] = strtok(msg, ' ');  % split the message into address and json string
+            out = jsondecode(jstr);   % decode the json string and return the address and the json object
+        end
         
         function out = waitfordata(obj)
             out = obj.socket.recv(); % The one gets msg with blocking
