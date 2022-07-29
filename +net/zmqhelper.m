@@ -68,7 +68,7 @@ classdef zmqhelper < handle
         end
         
         function [addr, out] = recvjson(obj)
-            msg = recvmsg(obj); % get msg with nonblocking and convert from java string to char
+            msg = obj.recvmsg(); % get msg with nonblocking and convert from java string to char
             if length(recvmsg)>6
                 [addr, jstr] = strtok(msg, ' ');  % split the message into address and json string
                 out = jsondecode(jstr);   % decode the json string and return the address and the json object
