@@ -28,7 +28,7 @@ classdef zmqhelper < handle
             import org.zeromq.ZMQ;
             context = ZMQ.context(1);
             obj.socket = context.socket(ZMQ.(upper(obj.socktype)));
-            obj.socket.HEARTBEAT_IVL = 60000;
+            %obj.socket.HEARTBEAT_INTERVAL = 60000; % seems not available in jeromq
             obj.socket.connect(obj.url);
             % This assumes you want to use connect. if you want to bind... you are an advanced user. Do it yourself.
             if ~isempty(obj.subscriptions)
