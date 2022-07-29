@@ -28,6 +28,7 @@ classdef zmqhelper < handle
             import org.zeromq.ZMQ;
             context = ZMQ.context(1);
             obj.socket = context.socket(ZMQ.(upper(obj.socktype)));
+            obj.socket.setsockopt(ZMQ.HEARTBEAT_IVL,60000);
             obj.socket.connect(obj.url);
             % This assumes you want to use connect. if you want to bind... you are an advanced user. Do it yourself.
             if ~isempty(obj.subscriptions)
