@@ -356,7 +356,6 @@ cfg = utils.apply_struct(def, fopts);
 end
 
 function addMysqlConnecterToPath()
-    clear java;
     jcp = javaclasspath('-all');
     
     jarfile = 'mysql-connector-java-5.1.42-bin.jar';

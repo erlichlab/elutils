@@ -1,5 +1,4 @@
 function addZMQConnecterToPath()
-clear java;
 jcp = javaclasspath('-all');
 
 jarfile = 'jeromq.jar';
