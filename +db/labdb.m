@@ -274,7 +274,6 @@ classdef (Sealed) labdb < handle
 
         function so = getConnection(varargin)
             setdbprefs('DataReturnFormat','table')
-            addMysqlConnecterToPath();  % Make sure the driver is on the path.
             
             persistent localObj; % This is where we store existing connections.
 
@@ -301,6 +300,7 @@ classdef (Sealed) labdb < handle
 
             % No connection exists
             localObj.(configsec) = [];
+            addMysqlConnecterToPath();  % Make sure the driver is on the path.
 
             if nargin < 3
                 config = readDBconf(configsec);

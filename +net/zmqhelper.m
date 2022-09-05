@@ -28,6 +28,7 @@ classdef zmqhelper < handle
             import org.zeromq.ZMQ;
             context = ZMQ.context(1);
             obj.socket = context.socket(ZMQ.(upper(obj.socktype)));
+            %obj.socket.HEARTBEAT_INTERVAL = 60000; % seems not available in jeromq
             obj.socket.connect(obj.url);
             % This assumes you want to use connect. if you want to bind... you are an advanced user. Do it yourself.
             if ~isempty(obj.subscriptions)
@@ -66,11 +67,22 @@ classdef zmqhelper < handle
             out = obj.socket.recv(1); % The one gets msg without blocking
         end
         
+        function [addr, out] = recvjson(obj)
+            msg = obj.recvmsg(); % get msg with nonblocking and convert from java string to char
+            if length(msg)>6
+                [addr, jstr] = strtok(msg, ' ');  % split the message into address and json string
+                out = jsondecode(jstr);   % decode the json string and return the address and the json object
+            else
+                addr = '';
+                out = '';
+            end
+        end
+
         function out = waitformsg(obj)
             out = obj.socket.recvStr(); % The one gets msg with blocking
         end
 
-        function addr, out = waitforjson(obj)
+        function [addr, out] = waitforjson(obj)
             msg = char(waitformsg(obj)); % get msg with blocking and convert from java string to char
             [addr, jstr] = strtok(msg, ' ');  % split the message into address and json string
             out = jsondecode(jstr);   % decode the json string and return the address and the json object
