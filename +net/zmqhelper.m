@@ -83,9 +83,20 @@ classdef zmqhelper < handle
         end
 
         function [addr, out] = waitforjson(obj)
-            msg = char(waitformsg(obj)); % get msg with blocking and convert from java string to char
-            [addr, jstr] = strtok(msg, ' ');  % split the message into address and json string
-            out = jsondecode(jstr);   % decode the json string and return the address and the json object
+            try
+                msg = char(waitformsg(obj)); % get msg with blocking and convert from java string to char
+                json_start = find(msg=='{',1,"first");
+                json_end = find(msg=='}',1,"last");
+                jstr = msg(json_start:json_end);
+                addr = strtrim(msg(1:json_start-1));
+                %out = json.fromjson(jstr);   % decode the json string and return the address and the json object
+                out = jsondecode(jstr);
+            catch me
+                utils.showerror(me)
+                display(msg)
+                addr = '';
+                out = struct();  
+            end
         end
         
         function out = waitfordata(obj)
