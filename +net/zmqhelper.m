@@ -68,29 +68,27 @@ classdef zmqhelper < handle
         end
         
         function [addr, out] = recvjson(obj)
-            msg = obj.recvmsg(); % get msg with nonblocking and convert from java string to char
-            if length(msg)>6
-                [addr, jstr] = strtok(msg, ' ');  % split the message into address and json string
-                out = jsondecode(jstr);   % decode the json string and return the address and the json object
-            else
-                addr = '';
-                out = '';
-            end
+            msg = recvmsg(obj); % get msg with nonblocking and convert from java string to char
+            [addr, out] = parsejson(msg);
         end
 
         function out = waitformsg(obj)
-            out = obj.socket.recvStr(); % The one gets msg with blocking
+            out = char(obj.socket.recvStr()); % The one gets msg with blocking
+        end
+
+        function [addr, out] = parsejson(msg)
+            json_start = find(msg=='{',1,"first");
+            json_end = find(msg=='}',1,"last");
+            jstr = msg(json_start:json_end);
+            addr = strtrim(msg(1:json_start-1));
+            %out = json.fromjson(jstr);   % decode the json string and return the address and the json object
+            out = jsondecode(jstr);
         end
 
         function [addr, out] = waitforjson(obj)
             try
-                msg = char(waitformsg(obj)); % get msg with blocking and convert from java string to char
-                json_start = find(msg=='{',1,"first");
-                json_end = find(msg=='}',1,"last");
-                jstr = msg(json_start:json_end);
-                addr = strtrim(msg(1:json_start-1));
-                %out = json.fromjson(jstr);   % decode the json string and return the address and the json object
-                out = jsondecode(jstr);
+                msg = waitformsg(obj); % get msg with blocking and convert from java string to char
+                [addr, out] = parsejson(msg);
             catch me
                 utils.showerror(me)
                 display(msg)
