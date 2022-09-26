@@ -69,7 +69,12 @@ classdef zmqhelper < handle
         
         function [addr, out] = recvjson(obj)
             msg = recvmsg(obj); % get msg with nonblocking and convert from java string to char
-            [addr, out] = parsejson(msg);
+            if isempty(msg)
+                addr = [];
+                out = [];
+            else
+                [addr, out] = parsejson(msg);
+            end
         end
 
         function out = waitformsg(obj)
@@ -81,7 +86,12 @@ classdef zmqhelper < handle
         function [addr, out] = waitforjson(obj)
             
                 msg = waitformsg(obj); % get msg with blocking
-                [addr, out] = parsejson(msg);
+                if isempty(msg)
+                    addr = [];
+                    out = [];
+                else
+                    [addr, out] = parsejson(msg);
+                end
             
         end
         
@@ -146,7 +156,7 @@ function [addr, out] = parsejson(msg)
     catch me
         utils.showerror(me)
         display(msg)
-        addr = '';
-        out = struct();  
+        addr = [];
+        out = [];  
     end
 end
