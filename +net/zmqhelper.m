@@ -79,15 +79,10 @@ classdef zmqhelper < handle
         
 
         function [addr, out] = waitforjson(obj)
-            try
+            
                 msg = waitformsg(obj); % get msg with blocking
                 [addr, out] = parsejson(msg);
-            catch me
-                utils.showerror(me)
-                display(msg)
-                addr = '';
-                out = struct();  
-            end
+            
         end
         
         function out = waitfordata(obj)
@@ -141,10 +136,17 @@ classdef zmqhelper < handle
 end % classdef
 
 function [addr, out] = parsejson(msg)
-    json_start = find(msg=='{',1,"first");
-    json_end = find(msg=='}',1,"last");
-    jstr = msg(json_start:json_end);
-    addr = strtrim(msg(1:json_start-1));
-    %out = json.fromjson(jstr);   % decode the json string and return the address and the json object
-    out = jsondecode(jstr);
+    try
+        json_start = find(msg=='{',1,"first");
+        json_end = find(msg=='}',1,"last");
+        jstr = msg(json_start:json_end);
+        addr = strtrim(msg(1:json_start-1));
+        %out = json.fromjson(jstr);   % decode the json string and return the address and the json object
+        out = jsondecode(jstr);
+    catch me
+        utils.showerror(me)
+        display(msg)
+        addr = '';
+        out = struct();  
+    end
 end
