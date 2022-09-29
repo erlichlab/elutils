@@ -36,7 +36,7 @@ if smoothed > 0
 end
 
 if isempty(click_times)
-    wav(click_offset:(SF/click_rate):end) = 1;
+    wav(click_offset:round(SF/click_rate):end) = 1;
 else
     for i = 1:3 %give a little bit more space for some very close clicks
         click_times_diff = click_times - [0, click_times(1:end-1)];
