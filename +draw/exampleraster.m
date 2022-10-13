@@ -48,6 +48,7 @@ font_name=iod('font_name','Helvetica',varargin);
 font_size=iod('font_size',14,varargin);
 legend_pos=iod('legend_pos',[0.73 0.1 0.2 0.15],varargin);
 clrs=iod('clrs',{'b','m','r','c','k','g','y',[1 0.5 0],[0.5 0.5 0.5]},varargin);
+alpha=iod('alpha',0.3,varargin);
 x_label=iod('x_label','',varargin);
 pre_mask=iod('pre_mask', -inf,varargin);
 post_mask=iod('post_mask',+inf,varargin);
@@ -177,7 +178,7 @@ for ci=1:numel(n_cnd)
     %     hh=line(x/1000,ymn(ci,:));
     % 	set(hh,'LineWidth',1,'LineStyle','-','Color',clrs{ci});
     if strcmpi(renderer,'opengl')
-        sh(ci)=draw.shadeplot(x,ymn(ci,:)-yst(ci,:),ymn(ci,:)+yst(ci,:),{clrs{ci},psthax,0.3});
+        sh(ci)=draw.shadeplot(x,ymn(ci,:)-yst(ci,:),ymn(ci,:)+yst(ci,:),{clrs{ci},psthax,alpha});
         % lh=line(x,ymn(ci,:),'Color',clrs{ci},'LineWidth',2);
     else
         if errorbars
