@@ -47,6 +47,4 @@ else
     wav(round(click_times))=1;
 end
 wav = conv(wav, click);
-wav(wav>1) = 1;%for insurance
-wav(wav<-1) = -1;
-
+wav = wav ./ (max(abs(wav)) * 1.01); 
