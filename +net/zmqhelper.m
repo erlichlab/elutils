@@ -114,6 +114,9 @@ classdef zmqhelper < handle
                     zmqconf = sprintf('%s:%d', ini.zmq.url, ini.zmq.pubport);
                 case  'sub'
                     zmqconf = sprintf('%s:%d', ini.zmq.url, ini.zmq.subport);
+                case  'push'
+                    zmqconf = sprintf('%s:%d', ini.zmq.url, ini.zmq.pushport);
+                    
                 otherwise
                     error('If not using pub or sub you must specify the URL to use.')
             end
@@ -130,6 +133,16 @@ classdef zmqhelper < handle
             
         end
         
+        function zpub = getPusher()
+            % all publishers can share one publisher.
+            persistent localpush;
+            if isempty(localpush)
+                localpush = net.zmqhelper('type','push');
+            end
+            zpub = localpush;
+            
+        end
+
         function zsub = getSubscriber(subscriptions)
             if ischar(subscriptions)
                 subscriptions = {subscriptions};
