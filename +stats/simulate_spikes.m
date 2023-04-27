@@ -26,13 +26,13 @@ if nargin==0 % Part of help!
     kernel = {gampdf(0:krn_bin_size:2,3,0.1), gampdf(0:0.1:6,5,0.4)};
     kernel{1} = [zeros(size(kernel{1})), kernel{1}./max(kernel{1})*7];
     kernel{2} = [zeros(size(kernel{2})),kernel{2}./max(kernel{2})*2];
-    n_trials = 100;
-    trial_starts = linspace(0,500, n_trials )';
+    n_trials = 500;
+    trial_starts = linspace(0,n_trials*5, n_trials )';
     event_ts = [trial_starts trial_starts + rand(size(trial_starts))+0.1];
     event_weights = randi([-1 5], n_trials, numel(kernel))*3;
     [spktimes, rate_function] = stats.simulate_spikes(event_ts, kernel, event_weights,'krn_bin_size',krn_bin_size,'baseline',20);
-    figure; draw.exampleraster(event_ts(:,1), spktimes,'cnd',event_weights(:,1),'errorbars',0)
-    figure; draw.exampleraster(event_ts(:,2), spktimes,'cnd',event_weights(:,2),'errorbars',0)
+    figure(314); clf; draw.exampleraster(event_ts(:,1), spktimes,'cnd',event_weights(:,1),'errorbars',0);
+    figure(315); clf; draw.exampleraster(event_ts(:,2), spktimes,'cnd',event_weights(:,2),'errorbars',0);
 
     return
     
