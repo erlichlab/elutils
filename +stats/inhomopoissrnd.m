@@ -38,10 +38,11 @@ if nargin==0
     post = 20;
     offset = [0:40:2222];
     noise = @(x)randn(x)*5;
-    events = stats.inhomopoissrnd(lambda, 'pre',-5,'post',post,'offset',offset,'noise',noise,'refract_dur',0.001);
+    events = stats.inhomopoissrnd(lambda, 'pre',-5,'post',post,'offset',offset) %,'noise',noise,'refract_dur',0.001);
     krn = normpdf(-3:0.001:3, 0,1);
     kbs = 0.001;
     draw.exampleraster(offset(:), events,'pre',1,'post',20,'errorbars',0);
+    figure(2); clf; plot(events, ones(1,length(events)),'o')
     return
     
 end
