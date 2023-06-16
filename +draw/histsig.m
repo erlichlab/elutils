@@ -14,6 +14,7 @@ inpd = @utils.inputordefault;
 [normed, args]=inpd('normed',false,args);
 [zero, args]=inpd('zero',0,args);
 [pval_threshold,args] = inpd('pval_threshold','.05',args);
+[text_display,args] = inpd('text','off',args);%empty for default, off for skip, others for user defined text
 inpd(args)
 
 gd=~isnan(x);
@@ -58,7 +59,11 @@ end
 
 set(ax,'box','off','YLim',y_lim)
 set(ax,'Color','none')
-text(ax, getx(ax),gety(ax),sprintf('%d%% p<%s, n=%d',round(100*mean(x_sig)),pval_threshold,sum(~isnan(x))))
+if isempty(text_display)
+    text(ax, getx(ax),gety(ax),sprintf('%d%% p<%s, n=%d',round(100*mean(x_sig)),pval_threshold,sum(~isnan(x))))
+elseif ~strcmp(text_display,'off')
+    text(ax, getx(ax),gety(ax),text_display)
+end
 %text(ax, getx(ax),gety(ax),[num2str(round(100*mean(x_sig))) '% p<0.05'])
 
 x_mean=nanmean(x);
