@@ -18,7 +18,7 @@ fh=iod('fh',[], varargin);
 marker_size = iod('marker_size',24,varargin);
 x_label=iod('x_label','',varargin);
 y_label=iod('y_label','',varargin);
-addtional_text = iod('text','',varargin);
+text_display = iod('text',sprintf('n=%d',sum(isfinite(x))),varargin);%empty for default, off for skip, others for user defined text
 
 x_lim_b=[min(x)-0.1 max(x)+0.1];
 y_lim_b=[min(y)-0.1 max(y)+0.1];
@@ -47,10 +47,8 @@ xlim(hm,x_lim);
 ylim(hm,y_lim);
 draw.xhairs(hm,'k:',0,0);
 axes(hm);
-if isempty(addtional_text)
-text(getx,gety,['n=' num2str(numel(x))])
-else
-    text(getx,gety,['n=' num2str(numel(x)), ', ',addtional_text])
+if ~isempty(text_display)
+    text(getx,gety,text_display)
 end
 
 
