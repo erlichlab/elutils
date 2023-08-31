@@ -16,16 +16,19 @@ catch
     IA=InetAddress.getAllByName(InetAddress.getLocalHost().getHostName());
 end
 
-
-if ~exist('contains','file')
-    eval('contains=@(x,y)cellfun(@(a)any(strfind(a,y)),{x});')
+% contains was introduced in matlab 2016b. 
+% If we are running an older version, use strfind instead
+if exist('contains','builtin')
+    isin=@(x,y)contains(x,y);
+else
+    isin=@(x,y)cellfun(@(a)any(strfind(a,y)),{x});
 end
 
 try
     
     keeps=zeros(size(IA));
     for ix=1:numel(IA)
-        if contains(class(IA(ix)),'4') % this is an IPv4 address
+        if isin(class(IA(ix)),'4') % this is an IPv4 address
             ip=char(IA(ix).getHostAddress);
             if ip(1)=='0' || isequal(ip,'127.0.0.1') || isequal(ip,'127.0.1.1') % ignore localhost and microsoft tv/video connector
                 keeps(ix)=0;
@@ -42,7 +45,7 @@ try
         warning('Not sure what my IP address is');
         good_IA=find(keeps==1,1,'first');
     else
-        'Could not find any IP'
+        fprintf(2,'Could not find any IP')
         [ip,mac,hostname] = deal([]);
         return
     end
