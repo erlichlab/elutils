@@ -25,12 +25,12 @@ function [out, inps] = inputordefault(keyname, defval, inps)
 		end
 	end
  else
-	ind = strcmpi(keyname, inps(1:2:end));
-	% is the keyname in the inputs? Look only at the odd elements of inps, since this keyname could be a value of another input.
-	if any(ind)
-		out = inps{2*find(ind)};
-		inps(2*find(ind)-1:2*find(ind)) = [];  % erase these from the list.
-	else
-		out = defval;
-	end
+    out = defval;
+    for ox = 1:2:numel(inps)
+        if strcmpi(keyname, inps{ox})
+            out = inps{ox+1};
+    		inps(ox:ox+1) = [];  % erase these from the list.
+	        break
+        end
+    end
 end
