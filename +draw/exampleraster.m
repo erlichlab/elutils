@@ -169,7 +169,6 @@ for ci=1:numel(n_cnd)
     %% Plot the rasters
     ll=line(x2,y2);
     set(ll,'color','k');
-    % Instead of gca, we should plot to ras(ci)
     set(ras(ci),'XTickLabel',[]);
     set(ras(ci),'YTick',[]);
     set(ras(ci),'Box','off')
