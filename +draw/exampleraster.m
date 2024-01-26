@@ -59,7 +59,8 @@ errorbars=iod('errorbars',1,varargin);
 testfunc=iod('testfunc',[],varargin);
 show_yinfo=iod('show_yinfo',1,varargin);
 sortby=iod('sortby',[],varargin);
-
+xticks=iod('XTick',[],varargin);
+axis_line_width=iod('axis_line_width',.5,varargin);
 
 set(gcf, 'Renderer',renderer);
 [ntrials,nrefs]=size(ev);
@@ -155,6 +156,7 @@ for ci=1:numel(n_cnd)
     set(gca,'Box','off')
     set(gca,'YLim',[0 max(y2)])
     set(gca,'XLim',[-pre post]);
+    set(gca,'LineWidth',axis_line_width)
     
     
     for rx=1:nrefs
@@ -220,10 +222,14 @@ end
 ch=get(psthax,'Children');
 set(psthax,'Children',[ch(nrefs+1:end); ch(1:nrefs)]);
 
-
-xticks=get(psthax,'XTick');
+if ~isempty(xticks)
+    set(gca,'XTick',xticks);
+else
+    xticks=get(psthax,'XTick');
+end
 set(psthax,'XTick',xticks);
 set(ras,'XTick',xticks);
+set(psthax,'LineWidth',axis_line_width)
 
 if ~isempty(legend_pos) && ~isempty(legend_str)
     [lh,oh]=legend(sh,legend_str);
@@ -240,8 +246,8 @@ else
     xh=xlabel(psthax,x_label);set(xh,'interpreter','none');
 end
 if show_yinfo
-ylabel(psthax,'Hz \pm SE')
+    ylabel(psthax,'Hz \pm SE')
 else
-    set(psthax,'YTick',[]);
+    set(psthax,'YLabel',[]);
 end
 ras(end+1)=psthax;
