@@ -1,31 +1,42 @@
 function [ras,R]=exampleraster(ev, ts,varargin)
-% [ax_handle,data]=rasterC(ev, ts, varargin)
-% pairs={'pre'        3;...
-%        'post'       3;...
-%        'binsz'      0.050;...
-%        'cnd'        1;...
-%        'meanflg'    0;...
-%        'krn'        0.25;...
-%        'ax_handle'  [];...
-%        'legend_str' '';...
-%        'renderer', 'opengl';...
-%        'ref_label', 'REF';...
-%        'psth_height', 0.248;...
-%        'total_height' 0.8;...
-%        'corner'       [0.1 0.1];...
-%        'ax_width'      0.55;...
-% 	   'font_name'	   'Helvetica';...
-% 	   'font_size'		9;...
-% 	   'legend_pos'     [0.73 0.1 0.2 0.15];...
-% 	   'clrs'	{'c','b','r','m','r','g','m'};...
-% 	   'x_label','';...
-%     'pre_mask', -inf;...
-%     'post_mask',+inf;...
-%     'cout',[];...
-%     'stim_back',[];...
-%     'errorbars', 0;...
-%     'testfunc', [];...
-%     'sortby', [];...
+% EXAMPLERASTER plot rasters and psth for a cell given some events and
+% spike times.
+%
+% [ax_handle,data]=exampleraster(ev, ts, 'pre',1,'krn',0.2)
+%
+% These are optional arguments with their default values
+% 
+% pre = iod('pre',3,varargin);
+% post = iod('post',3,varargin);
+% binsz = iod('binsz',0.01,varargin);
+% cnd = iod('cnd',1,varargin);
+% meanflg = iod('meanflg',0,varargin);
+% krn = iod('krn',0.1,varargin);
+% ax_handle = iod('ax_handle',[],varargin);
+% legend_str = iod('legend_str','',varargin);
+% renderer =iod('renderer','painters',varargin);
+% ref_label=iod('ref_label','REF',varargin);
+% psth_height=iod('psth_height',0.248,varargin);
+% total_height=iod('total_height',0.8,varargin);
+% corner=iod('corner',[0.1 0.1],varargin);
+% ax_width=iod('ax_width',0.55,varargin);
+% font_name=iod('font_name','Helvetica',varargin);
+% font_size=iod('font_size',14,varargin);
+% legend_pos=iod('legend_pos',[0.73 0.1 0.2 0.15],varargin);
+% clrs=iod('clrs',{'b','m','r','c','k','g','y',[1 0.5 0],[0.5 0.5 0.5]},varargin);
+% alpha=iod('alpha',0.3,varargin);
+% x_label=iod('x_label','',varargin);
+% pre_mask=iod('pre_mask', -inf,varargin);
+% post_mask=iod('post_mask',+inf,varargin);
+% cout=iod('cout',[],varargin);
+% stim_back=iod('stim_back',[],varargin);
+% sb_clr=iod('sb_clr',[0.8 0.8 0.4],varargin);
+% errorbars=iod('errorbars',1,varargin);
+% testfunc=iod('testfunc',[],varargin);
+% show_yinfo=iod('show_yinfo',1,varargin);
+% sortby=iod('sortby',[],varargin);
+% xticks=iod('xticks',[],varargin);
+% axis_line_width=iod('axis_line_width',.5,varargin);
 %
 
 corner=[];  % this is necessary because corner is a function
@@ -59,9 +70,17 @@ errorbars=iod('errorbars',1,varargin);
 testfunc=iod('testfunc',[],varargin);
 show_yinfo=iod('show_yinfo',1,varargin);
 sortby=iod('sortby',[],varargin);
-
+xticks=iod('xticks',[],varargin);
+axis_line_width=iod('axis_line_width',.5,varargin);
 
 set(gcf, 'Renderer',renderer);
+
+% DEMO Mode
+if nargin==0
+    stats.simulate_spikes()
+    return
+end
+
 [ntrials,nrefs]=size(ev);
 
 
@@ -150,16 +169,17 @@ for ci=1:numel(n_cnd)
     %% Plot the rasters
     ll=line(x2,y2);
     set(ll,'color','k');
-    set(gca,'XTickLabel',[]);
-    set(gca,'YTick',[]);
-    set(gca,'Box','off')
-    set(gca,'YLim',[0 max(y2)])
-    set(gca,'XLim',[-pre post]);
+    set(ras(ci),'XTickLabel',[]);
+    set(ras(ci),'YTick',[]);
+    set(ras(ci),'Box','off')
+    set(ras(ci),'YLim',[0 max(y2)])
+    set(ras(ci),'XLim',[-pre post]);
+    set(ras(ci),'LineWidth',axis_line_width)
     
     
     for rx=1:nrefs
-    ll=line([mutau(rx) mutau(rx)],[0 max(y2)]);
-    set(ll,'LineStyle','-','color',clrs{ci},'LineWidth',1);
+        ll=line([mutau(rx) mutau(rx)],[0 max(y2)]);
+        set(ll,'LineStyle','-','color',clrs{ci},'LineWidth',1);
     end
     
     if ~isempty(cout)
@@ -220,10 +240,14 @@ end
 ch=get(psthax,'Children');
 set(psthax,'Children',[ch(nrefs+1:end); ch(1:nrefs)]);
 
-
-xticks=get(psthax,'XTick');
+if ~isempty(xticks)
+    set(gca,'XTick',xticks);
+else
+    xticks=get(psthax,'XTick');
+end
 set(psthax,'XTick',xticks);
 set(ras,'XTick',xticks);
+set(psthax,'LineWidth',axis_line_width)
 
 if ~isempty(legend_pos) && ~isempty(legend_str)
     [lh,oh]=legend(sh,legend_str);
@@ -240,8 +264,8 @@ else
     xh=xlabel(psthax,x_label);set(xh,'interpreter','none');
 end
 if show_yinfo
-ylabel(psthax,'Hz \pm SE')
+    ylabel(psthax,'Hz \pm SE')
 else
-    set(psthax,'YTick',[]);
+    set(psthax,'YLabel',[]);
 end
 ras(end+1)=psthax;
