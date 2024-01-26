@@ -59,7 +59,7 @@ errorbars=iod('errorbars',1,varargin);
 testfunc=iod('testfunc',[],varargin);
 show_yinfo=iod('show_yinfo',1,varargin);
 sortby=iod('sortby',[],varargin);
-xticks=iod('XTick',[],varargin);
+xticks=iod('xticks',[],varargin);
 axis_line_width=iod('axis_line_width',.5,varargin);
 
 set(gcf, 'Renderer',renderer);
@@ -139,6 +139,7 @@ for ci=1:numel(n_cnd)
     
     y=Y(ref,:);
     
+    % JCE: I think this should be ev(ref,ci) 
     [y2,x2]=draw.rasterplot(ev(ref,1),W,pre,post,'pre_mask',pre_mask(ref),'post_mask',post_mask(ref),'plotthis',0);
     ras(ci)=axes('Position',[corner(1) y_ind ax_width height_per_trial*sampz]);
     y_ind=y_ind+height_per_trial*sampz+0.001;
@@ -151,6 +152,7 @@ for ci=1:numel(n_cnd)
     %% Plot the rasters
     ll=line(x2,y2);
     set(ll,'color','k');
+    % Instead of gca, we should plot to ras(ci)
     set(gca,'XTickLabel',[]);
     set(gca,'YTick',[]);
     set(gca,'Box','off')
@@ -160,8 +162,8 @@ for ci=1:numel(n_cnd)
     
     
     for rx=1:nrefs
-    ll=line([mutau(rx) mutau(rx)],[0 max(y2)]);
-    set(ll,'LineStyle','-','color',clrs{ci},'LineWidth',1);
+        ll=line([mutau(rx) mutau(rx)],[0 max(y2)]);
+        set(ll,'LineStyle','-','color',clrs{ci},'LineWidth',1);
     end
     
     if ~isempty(cout)
