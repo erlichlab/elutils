@@ -37,8 +37,9 @@ if normalize_krn
     kernel = kernel/sum(abs(kernel))/kernel_bin_size; % normalize
 end
 offset = ceil(length(kernel)/2);
-buffered_pre=pre+offset*kernel_bin_size;
-x = -buffered_pre:kernel_bin_size:post;
+buffered_pre=pre+offset*kernel_bin_size; 
+% We use an offset to avoid edge effects of smoothing
+x = -buffered_pre:kernel_bin_size:post; % bin edges
 y = zeros(length(ref), numel(x)-1); 
 ts=ts(:)';   % make ts a row vector;
 for rx = 1:length(ref)
@@ -52,7 +53,7 @@ for rx = 1:length(ref)
         
         if ~isempty(spks)
             ty = histc(spks,x);
-            y(rx, :) = ty(1:end-1);
+            y(rx, :) = ty(1:end-1); % trim off last bin because of histc technicality
         end
     end
 end
