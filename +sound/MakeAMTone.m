@@ -71,7 +71,7 @@ ramp            =params.ramp;
     tone=tone./max(abs(tone));
     tone=amplitude.*tone;
 
-    edge=MakeEdge(ramp,samplerate);     % prepare the edges
+    edge=sound.MakeEdge(ramp,samplerate);     % prepare the edges
     ledge=length(edge);
     tone(1:ledge)=tone(1:ledge).*fliplr(edge);
     tone((end-ledge+1):end)=tone((end-ledge+1):end).*edge;
