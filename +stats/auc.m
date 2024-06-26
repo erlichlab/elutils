@@ -28,6 +28,6 @@ y = (sum(R(labels == 1)) - (nTarget^2 + nTarget)/2) / (nTarget * nBackground);
 end
 else
     for cx=1:size(stim,2)
-        y(cx)=auc(stim(:,cx), nostim(:,cx));
+        y(cx)=stats.auc(stim(:,cx), nostim(:,cx));
     end
 end
