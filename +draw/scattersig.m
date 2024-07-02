@@ -19,6 +19,8 @@ marker_size = iod('marker_size',24,varargin);
 x_label=iod('x_label','',varargin);
 y_label=iod('y_label','',varargin);
 text_display = iod('text',sprintf('n=%d',sum(isfinite(x))),varargin);%empty for default, off for skip, others for user defined text
+alpha_insig = iod('alpha_insig',0.1,varargin);
+alpha_sig = iod('alpha_sig',0.7,varargin);
 
 x_lim_b=[min(x)-0.1 max(x)+0.1];
 y_lim_b=[min(y)-0.1 max(y)+0.1];
@@ -39,8 +41,8 @@ set(hm,'Ylim',[-1 1]);
 
 % make the scatter plot
 
-scatter(hm,x(sig==0), y(sig==0), marker_size,'k');
-scatter(hm,x(sig==1), y(sig==1), marker_size,'k','filled');
+scatter(hm,x(sig==0), y(sig==0), marker_size,'k', 'MarkerFaceAlpha', alpha_insig, 'MarkerEdgeAlpha', alpha_insig);
+scatter(hm,x(sig==1), y(sig==1), marker_size,'k','filled', 'MarkerFaceAlpha', alpha_sig, 'MarkerEdgeAlpha', alpha_sig);
 xlabel(hm,x_label);
 ylabel(hm,y_label);
 xlim(hm,x_lim);
