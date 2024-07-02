@@ -21,7 +21,7 @@ y2=y2(:)-y1;
 Y=[y1, y2];
 
 h1=area(h,x,Y);
-set(h1(2),'EdgeColor','none','FaceColor',clr);
+set(h1(2),'EdgeColor','none','FaceColor',clr,'ShowBaseLine','off');
 if alp < 1
     alpha(h1(2),alp);
 end
