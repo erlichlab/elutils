@@ -57,7 +57,7 @@ if one_dist
     varargout{2}=prctile(B,50);
     varargout{3}=B;
     
-elseif nargin==2
+else
     sA=size(A,1);
     sB=size(B,1);
     sd=nanmedian(A)-nanmedian(B);
