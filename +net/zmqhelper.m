@@ -21,9 +21,17 @@ classdef zmqhelper < handle
             obj.socktype = inpd('type', 'pub', varargin);
             obj.url = inpd('url', [], varargin);
             obj.subscriptions = inpd('subscriptions', [], varargin);
+            service = inpd('service', [], varargin);
+
+            configsocktype = obj.socktype;
+
+            if ~isempty(service)
+                % append the service to the socket type
+                configsocktype = [obj.socktype '_' service];
+            end
             
             if isempty(obj.url)
-                obj.url = net.zmqhelper.loadconf(obj.socktype);
+                obj.url = net.zmqhelper.loadconf(configsocktype);
             end
             import org.zeromq.ZMQ;
             context = ZMQ.context(1);
@@ -116,10 +124,26 @@ classdef zmqhelper < handle
                     zmqconf = sprintf('%s:%d', ini.zmq.url, ini.zmq.subport);
                 case  'push'
                     zmqconf = sprintf('%s:%d', ini.zmq.url, ini.zmq.pushport);
+                case 'pub_gameserver'
+                    zmqconf = sprintf('%s:%d', ini.gameserverzmq.url, ini.gameserverzmq.pubport);
+                case 'sub_gameserver'
+                    zmqconf = sprintf('%s:%d', ini.gameserverzmq.url, ini.gameserverzmq.subport);
+                case 'push_gameserver'
+                    zmqconf = sprintf('%s:%d', ini.gameserverzmq.url, ini.gameserverzmq.pushport);
                     
                 otherwise
                     error('If not using pub or sub you must specify the URL to use.')
             end
+            
+        end
+
+        function gspub = getGameServerPublisher()
+            % all publishers can share one publisher.
+            persistent localgameserverpub;
+            if isempty(localgameserverpub)
+                localgameserverpub = net.zmqhelper('type','pub','service','gameserver');
+            end
+            gspub = localgameserverpub;
             
         end
         
@@ -132,15 +156,31 @@ classdef zmqhelper < handle
             zpub = localpub;
             
         end
+
+        function gspub = getGameServerPusher()
+            persistent localgameserverpush;
+            if isempty(localgameserverpush)
+                localgameserverpush = net.zmqhelper('type','push','service','gameserver');
+            end
+            gspub = localgameserverpush;
+        end
         
-        function zpub = getPusher()
-            % all publishers can share one publisher.
+        function zpub = getPusher(varargin)
+            % all publishers can share one publisher
             persistent localpush;
             if isempty(localpush)
                 localpush = net.zmqhelper('type','push');
             end
             zpub = localpush;
             
+        end
+
+        function gssub = getGameServerSubscriber(subscriptions)
+            persistent localgameserversub;
+            if isempty(localgameserversub)
+                localgameserversub = net.zmqhelper('type','sub','subscriptions',subscriptions, 'service','gameserver');
+            end
+            gssub = localgameserversub;
         end
 
         function zsub = getSubscriber(subscriptions)
