@@ -72,6 +72,7 @@ show_yinfo=iod('show_yinfo',1,varargin);
 sortby=iod('sortby',[],varargin);
 xticks=iod('xticks',[],varargin);
 axis_line_width=iod('axis_line_width',.5,varargin);
+vline_thickness=iod('vline_thickness',2.5,varargin);
 
 set(gcf, 'Renderer',renderer);
 
@@ -179,9 +180,16 @@ for ci=1:numel(n_cnd)
     
     for rx=1:nrefs
         ll=line([mutau(rx) mutau(rx)],[0 max(y2)]);
-        set(ll,'LineStyle','-','color',clrs{ci},'LineWidth',1);
+        set(ll,'LineStyle','-','color',clrs{ci},'LineWidth',vline_thickness);
     end
+
+    % Move colored line to the left outside of the axis?
+    %min_x=min(x2);
+    %lll=line([mutau(rx) mutau(rx)],[0 max(y2)]);
+    %set(ll,'LineStyle','-','color','k','LineWidth',1);
     
+
+
     if ~isempty(cout)
         hold on;
         h=plot(ras(ci),cout(ref),1:sampz,'o','Color','k','MarkerFaceColor',clrs{ci},'MarkerSize',2);
