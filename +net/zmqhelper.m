@@ -77,8 +77,11 @@ classdef zmqhelper < handle
             end
         end
 
-        function out = waitformsg(obj)
-            out = char(obj.socket.recvStr()); % The one gets msg with blocking
+        function out = waitformsg(obj, timeout)
+            if nargin < 2
+                timeout = 0; % default is blocking
+            end
+            out = char(obj.socket.recvStr(uint32(timeout)); % The one gets msg with blocking
         end
 
         
