@@ -33,11 +33,21 @@ classdef zmqhelper < handle
             if isempty(obj.url)
                 obj.url = net.zmqhelper.loadconf(configsocktype);
             end
+            
+            fprintf('Creating a %s socket at %s\n', obj.socktype, obj.url);
+
             import org.zeromq.ZMQ;
             context = ZMQ.context(1);
             obj.socket = context.socket(ZMQ.(upper(obj.socktype)));
             %obj.socket.HEARTBEAT_INTERVAL = 60000; % seems not available in jeromq
-            obj.socket.connect(obj.url);
+
+            if obj.socktype == "pull"
+                % for pull sockets we bind to the url
+                obj.socket.bind(obj.url);
+            else
+                % for push, pub, sub, and req sockets we connect to the url
+                obj.socket.connect(obj.url);
+            end
             % This assumes you want to use connect. if you want to bind... you are an advanced user. Do it yourself.
             if ~isempty(obj.subscriptions)
                 for sx = 1:numel(obj.subscriptions)
@@ -130,6 +140,8 @@ classdef zmqhelper < handle
                     zmqconf = sprintf('%s:%d', ini.gameserverzmq.url, ini.gameserverzmq.subport);
                 case 'push_gameserver'
                     zmqconf = sprintf('%s:%d', ini.gameserverzmq.url, ini.gameserverzmq.pushport);
+                case 'pull_gameserver'
+                    zmqconf = sprintf('tcp://*:%d', ini.gameserverzmq.pullport);
                     
                 otherwise
                     error('If not using pub or sub you must specify the URL to use.')
@@ -157,12 +169,12 @@ classdef zmqhelper < handle
             
         end
 
-        function gspub = getGameServerPusher()
+        function gspush = getGameServerPusher()
             persistent localgameserverpush;
             if isempty(localgameserverpush)
                 localgameserverpush = net.zmqhelper('type','push','service','gameserver');
             end
-            gspub = localgameserverpush;
+            gspush = localgameserverpush;
         end
         
         function zpub = getPusher(varargin)
@@ -181,6 +193,14 @@ classdef zmqhelper < handle
                 localgameserversub = net.zmqhelper('type','sub','subscriptions',subscriptions, 'service','gameserver');
             end
             gssub = localgameserversub;
+        end
+
+        function gspull = getGameServerPull()
+            persistent localgameserverpull;
+            if isempty(localgameserverpull)
+                localgameserverpull = net.zmqhelper('type','pull', 'service','gameserver');
+            end
+            gspull = localgameserverpull;
         end
 
         function zsub = getSubscriber(subscriptions)
