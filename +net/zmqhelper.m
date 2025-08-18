@@ -7,6 +7,7 @@ classdef zmqhelper < handle
         socktype
         socket
         subscriptions
+        service
     end
     
     methods
@@ -21,12 +22,12 @@ classdef zmqhelper < handle
             obj.socktype = inpd('type', 'pub', varargin);
             obj.url = inpd('url', [], varargin);
             obj.subscriptions = inpd('subscriptions', [], varargin);
-            service = inpd('service', [], varargin);
+            obj.service = inpd('service', [], varargin);
 
             configsocktype = obj.socktype;
             
             if isempty(obj.url)
-                obj.url = net.zmqhelper.loadconf(configsocktype, service);
+                obj.url = net.zmqhelper.loadconf(configsocktype, obj.service);
             end
             
             fprintf('Creating a %s socket at %s\n', obj.socktype, obj.url);
@@ -140,7 +141,11 @@ classdef zmqhelper < handle
 
             ini = utils.ini2struct(fname);
 
-            zmqconf = ini.(service);
+            if isfield(ini, service)
+                zmqconf = ini.(service);
+            else
+                error('Service "%s" not found in configuration file "%s"', service, fname);
+            end
             
             switch prop
                 case 'pub'
