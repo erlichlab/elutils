@@ -27,7 +27,7 @@ classdef zmqhelper < handle
             configsocktype = obj.socktype;
             
             if isempty(obj.url)
-                obj.url = net.zmqhelper.loadconf(configsocktype, obj.service);
+                obj.url = net.zmqhelper.loadconf(configsocktype, 'service' ,obj.service);
             end
             
             fprintf('Creating a %s socket at %s\n', obj.socktype, obj.url);
