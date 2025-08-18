@@ -131,10 +131,10 @@ classdef zmqhelper < handle
     methods (Static)
         
         function zmqconf = loadconf(prop, fname, service)
-            if nargin == 1
+            if nargin < 2 || isempty(fname)
                 fname = '~/.dbconf';
             end
-            if nargin < 3
+            if nargin < 3 || isempty(service)
                 service = 'zmq';
             end
 
