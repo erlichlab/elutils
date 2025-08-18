@@ -24,14 +24,9 @@ classdef zmqhelper < handle
             service = inpd('service', [], varargin);
 
             configsocktype = obj.socktype;
-
-            if ~isempty(service)
-                % append the service to the socket type
-                configsocktype = [obj.socktype '_' service];
-            end
             
             if isempty(obj.url)
-                obj.url = net.zmqhelper.loadconf(configsocktype);
+                obj.url = net.zmqhelper.loadconf(configsocktype, service);
             end
             
             fprintf('Creating a %s socket at %s\n', obj.socktype, obj.url);
@@ -57,6 +52,13 @@ classdef zmqhelper < handle
             
             
         end
+
+        function out = sendkv_simple(obj, key, value)
+            % just encode the value as json and send it with the key
+            value_json = jsonencode(value);
+            msg = uint8(sprintf('%s %s', key, value_json));
+            out = send(obj.socket, msg);
+        end
         
         function out = sendkv(obj, key, value)
             msg = uint8(sprintf('%s %s',key, json.mdumps(value)));
@@ -69,6 +71,13 @@ classdef zmqhelper < handle
         
         function out = sendbytes(obj, msg)
             out = obj.socket.send(msg);
+        end
+
+        function [key,val] = recvkv_simple(obj)
+            % receive a key value pair where the value is a json encoded string
+            out = char(obj.socket.recvStr(1)); % The one gets msg without blocking
+            [key, tval] = strtok(out, ' ');
+            val = jsondecode(tval(2:end));
         end
         
         function [key, val] = recvkv(obj)
@@ -121,43 +130,34 @@ classdef zmqhelper < handle
     
     methods (Static)
         
-        function zmqconf = loadconf(prop, fname)
+        function zmqconf = loadconf(prop, fname, service)
             if nargin == 1
                 fname = '~/.dbconf';
             end
+            if nargin < 3
+                service = 'zmq';
+            end
+
             ini = utils.ini2struct(fname);
+
+            zmqconf = ini.(service);
             
             switch prop
                 case 'pub'
-                    zmqconf = sprintf('%s:%d', ini.zmq.url, ini.zmq.pubport);
+                    zmqconf = sprintf('%s:%d', zmqconf.url, zmqconf.pubport);
                 case  'sub'
-                    zmqconf = sprintf('%s:%d', ini.zmq.url, ini.zmq.subport);
+                    zmqconf = sprintf('%s:%d', zmqconf.url, zmqconf.subport);
                 case  'push'
-                    zmqconf = sprintf('%s:%d', ini.zmq.url, ini.zmq.pushport);
-                case 'pub_gameserver'
-                    zmqconf = sprintf('%s:%d', ini.gameserverzmq.url, ini.gameserverzmq.pubport);
-                case 'sub_gameserver'
-                    zmqconf = sprintf('%s:%d', ini.gameserverzmq.url, ini.gameserverzmq.subport);
-                case 'push_gameserver'
-                    zmqconf = sprintf('%s:%d', ini.gameserverzmq.url, ini.gameserverzmq.pushport);
-                case 'pull_gameserver'
-                    zmqconf = sprintf('tcp://*:%d', ini.gameserverzmq.pullport);
-                    
+                    zmqconf = sprintf('%s:%d', zmqconf.url, zmqconf.pushport);
+                case 'pull'
+                    zmqconf = sprintf('tcp://*:%d', zmqconf.pullport);               
                 otherwise
                     error('If not using pub or sub you must specify the URL to use.')
             end
             
         end
 
-        function gspub = getGameServerPublisher()
-            % all publishers can share one publisher.
-            persistent localgameserverpub;
-            if isempty(localgameserverpub)
-                localgameserverpub = net.zmqhelper('type','pub','service','gameserver');
-            end
-            gspub = localgameserverpub;
-            
-        end
+        
         
         function zpub = getPublisher()
             % all publishers can share one publisher.
@@ -169,13 +169,7 @@ classdef zmqhelper < handle
             
         end
 
-        function gspush = getGameServerPusher()
-            persistent localgameserverpush;
-            if isempty(localgameserverpush)
-                localgameserverpush = net.zmqhelper('type','push','service','gameserver');
-            end
-            gspush = localgameserverpush;
-        end
+        
         
         function zpub = getPusher(varargin)
             % all publishers can share one publisher
@@ -185,23 +179,7 @@ classdef zmqhelper < handle
             end
             zpub = localpush;
             
-        end
-
-        function gssub = getGameServerSubscriber(subscriptions)
-            persistent localgameserversub;
-            if isempty(localgameserversub)
-                localgameserversub = net.zmqhelper('type','sub','subscriptions',subscriptions, 'service','gameserver');
-            end
-            gssub = localgameserversub;
-        end
-
-        function gspull = getGameServerPull()
-            persistent localgameserverpull;
-            if isempty(localgameserverpull)
-                localgameserverpull = net.zmqhelper('type','pull', 'service','gameserver');
-            end
-            gspull = localgameserverpull;
-        end
+        end 
 
         function zsub = getSubscriber(subscriptions)
             if ischar(subscriptions)
@@ -210,7 +188,6 @@ classdef zmqhelper < handle
             zsub = net.zmqhelper('type','sub', 'subscriptions',subscriptions);
             
         end
-
         
         
     end % methods
