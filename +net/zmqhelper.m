@@ -131,13 +131,10 @@ classdef zmqhelper < handle
     
     methods (Static)
         
-        function zmqconf = loadconf(prop, fname, service)
-            if nargin < 2 || isempty(fname)
-                fname = '~/.dbconf';
-            end
-            if nargin < 3 || isempty(service)
-                service = 'zmq';
-            end
+        function zmqconf = loadconf(prop, varargin)
+            inpd = @utils.inputordefault;
+            fname = inpd('fname', '~/.dbconf', varargin);
+            service = inpd('service', 'zmq', varargin);
 
             ini = utils.ini2struct(fname);
 
