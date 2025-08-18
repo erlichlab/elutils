@@ -22,7 +22,7 @@ classdef zmqhelper < handle
             obj.socktype = inpd('type', 'pub', varargin);
             obj.url = inpd('url', [], varargin);
             obj.subscriptions = inpd('subscriptions', [], varargin);
-            obj.service = inpd('service', [], varargin);
+            obj.service = inpd('service', 'zmq', varargin);
 
             configsocktype = obj.socktype;
             
@@ -135,6 +135,10 @@ classdef zmqhelper < handle
             inpd = @utils.inputordefault;
             fname = inpd('fname', '~/.dbconf', varargin);
             service = inpd('service', 'zmq', varargin);
+
+            if isempty(service) || strcmp(service, '')
+                service = 'zmq';
+            end
 
             ini = utils.ini2struct(fname);
 
