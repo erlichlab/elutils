@@ -136,10 +136,6 @@ classdef zmqhelper < handle
             fname = inpd('fname', '~/.dbconf', varargin);
             service = inpd('service', 'zmq', varargin);
 
-            if isempty(service) || strcmp(service, '')
-                service = 'zmq';
-            end
-
             ini = utils.ini2struct(fname);
 
             if isfield(ini, service)
