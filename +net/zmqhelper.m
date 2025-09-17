@@ -7,6 +7,7 @@ classdef zmqhelper < handle
         socktype
         socket
         subscriptions
+        service
     end
     
     methods
@@ -21,15 +22,28 @@ classdef zmqhelper < handle
             obj.socktype = inpd('type', 'pub', varargin);
             obj.url = inpd('url', [], varargin);
             obj.subscriptions = inpd('subscriptions', [], varargin);
+            obj.service = inpd('service', 'zmq', varargin);
+
+            configsocktype = obj.socktype;
             
             if isempty(obj.url)
-                obj.url = net.zmqhelper.loadconf(obj.socktype);
+                obj.url = net.zmqhelper.loadconf(configsocktype, 'service' ,obj.service);
             end
+            
+            fprintf('Creating a %s socket at %s\n', obj.socktype, obj.url);
+
             import org.zeromq.ZMQ;
             context = ZMQ.context(1);
             obj.socket = context.socket(ZMQ.(upper(obj.socktype)));
             %obj.socket.HEARTBEAT_INTERVAL = 60000; % seems not available in jeromq
-            obj.socket.connect(obj.url);
+
+            if obj.socktype == "pull"
+                % for pull sockets we bind to the url
+                obj.socket.bind(obj.url);
+            else
+                % for push, pub, sub, and req sockets we connect to the url
+                obj.socket.connect(obj.url);
+            end
             % This assumes you want to use connect. if you want to bind... you are an advanced user. Do it yourself.
             if ~isempty(obj.subscriptions)
                 for sx = 1:numel(obj.subscriptions)
@@ -38,6 +52,13 @@ classdef zmqhelper < handle
             end
             
             
+        end
+
+        function out = sendkv_simple(obj, key, value)
+            % just encode the value as json and send it with the key
+            value_json = jsonencode(value);
+            msg = uint8(sprintf('%s %s', key, value_json));
+            out = send(obj.socket, msg);
         end
         
         function out = sendkv(obj, key, value)
@@ -51,6 +72,13 @@ classdef zmqhelper < handle
         
         function out = sendbytes(obj, msg)
             out = obj.socket.send(msg);
+        end
+
+        function [key,val] = recvkv_simple(obj)
+            % receive a key value pair where the value is a json encoded string
+            out = char(obj.socket.recvStr(1)); % The one gets msg without blocking
+            [key, tval] = strtok(out, ' ');
+            val = jsondecode(tval(2:end));
         end
         
         function [key, val] = recvkv(obj)
@@ -103,25 +131,35 @@ classdef zmqhelper < handle
     
     methods (Static)
         
-        function zmqconf = loadconf(prop, fname)
-            if nargin == 1
-                fname = '~/.dbconf';
-            end
+        function zmqconf = loadconf(prop, varargin)
+            inpd = @utils.inputordefault;
+            fname = inpd('fname', '~/.dbconf', varargin);
+            service = inpd('service', 'zmq', varargin);
+
             ini = utils.ini2struct(fname);
+
+            if isfield(ini, service)
+                zmqconf = ini.(service);
+            else
+                error('Service "%s" not found in configuration file "%s"', service, fname);
+            end
             
             switch prop
                 case 'pub'
-                    zmqconf = sprintf('%s:%d', ini.zmq.url, ini.zmq.pubport);
+                    zmqconf = sprintf('%s:%d', zmqconf.url, zmqconf.pubport);
                 case  'sub'
-                    zmqconf = sprintf('%s:%d', ini.zmq.url, ini.zmq.subport);
+                    zmqconf = sprintf('%s:%d', zmqconf.url, zmqconf.subport);
                 case  'push'
-                    zmqconf = sprintf('%s:%d', ini.zmq.url, ini.zmq.pushport);
-                    
+                    zmqconf = sprintf('%s:%d', zmqconf.url, zmqconf.pushport);
+                case 'pull'
+                    zmqconf = sprintf('tcp://*:%d', zmqconf.pullport);               
                 otherwise
                     error('If not using pub or sub you must specify the URL to use.')
             end
             
         end
+
+        
         
         function zpub = getPublisher()
             % all publishers can share one publisher.
@@ -132,16 +170,18 @@ classdef zmqhelper < handle
             zpub = localpub;
             
         end
+
         
-        function zpub = getPusher()
-            % all publishers can share one publisher.
+        
+        function zpub = getPusher(varargin)
+            % all publishers can share one publisher
             persistent localpush;
             if isempty(localpush)
                 localpush = net.zmqhelper('type','push');
             end
             zpub = localpush;
             
-        end
+        end 
 
         function zsub = getSubscriber(subscriptions)
             if ischar(subscriptions)
@@ -150,7 +190,6 @@ classdef zmqhelper < handle
             zsub = net.zmqhelper('type','sub', 'subscriptions',subscriptions);
             
         end
-
         
         
     end % methods
