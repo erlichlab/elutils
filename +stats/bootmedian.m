@@ -1,5 +1,6 @@
 function varargout=bootmedian(varargin)
-% [p,ci]=bootmedian(A,B,['boots'])
+% [p,95ci, medianCI]=bootmedian(A,['boots'])
+% [p,medianDiff]=bootmedian(A,B,['boots'])
 % When passed in a single vector, tests whether the median is different from 0
 % When passed in two vectors does a permutation test to see whether the medians
 %	are significantly different
@@ -80,7 +81,8 @@ else
     end
     
     sd_p=stats.get_p(sd, boot_score);
+
+    varargout{1}=sd_p;
+    varargout{2}=sd;
+    
 end
-varargout{1}=sd_p;
-varargout{2}=prctile(B,[2.5 97.5]);
-varargout{3}=prctile(B,[50]);

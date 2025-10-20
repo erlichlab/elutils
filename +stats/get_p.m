@@ -1,13 +1,34 @@
 function y= get_p(datumM, distM, tails, high)
-% p= stats.get_p(datum, dist)
-% p= stats.get_p(datum, dist, tails, high)
-% p is the prob that datum comes from dist.
-% tails is by default 2
-% if tails == 1 , then p is the prob that datum
-% is higher (if high==1) or lower (if high==0) than dist.
-% datum can be a single value or a 1 by n vector
-% dist  can be a vector  or an m by n matrix
-% p is the probability of datum in dist
+% get_p - Empirical p-value(s) from a permutation or bootstrap distribution
+%
+% Syntax:
+%   p = stats.get_p(datumM, distM)
+%   p = stats.get_p(datumM, distM, tails, high)
+%
+% Inputs:
+%   datumM - Scalar or vector of observed values.
+%   distM  - Vector or matrix of null distribution samples.
+%             If distM is m×n, then datumM must be 1×n.
+%   tails  - Number of tails for the test (default = 2).
+%             1 = one-tailed; 2 = two-tailed.
+%   high   - For one-tailed tests, test direction:
+%             1 = upper tail (datum > null)
+%             0 = lower tail (datum < null)
+%
+% Output:
+%   p      - Empirical p-values, same size as datumM.
+%
+% Notes:
+%   - Computes the empirical probability that 'datumM' is as or more
+%     extreme than samples in 'distM', optionally two-tailed.
+%   - For two-tailed tests, p-values are doubled and capped at a minimum
+%     of 2/N, where N = number of samples in distM.
+%   - For one-tailed tests, p-values reflect the proportion of the null
+%     distribution more extreme in the specified direction.
+%
+% References:
+%   Nichols & Holmes (2002), Human Brain Mapping 15(1): 1–25.
+%   Maris & Oostenveld (2007), J. Neurosci. Methods 164(1): 177–190.
 
 % check that inputs are the right size
 if nargin<3
