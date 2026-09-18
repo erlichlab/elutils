@@ -7,6 +7,7 @@
 
 using Test
 using JSON
+using OrderedCollections: OrderedDict
 
 include("mloads.jl")
 using .MLoads
@@ -151,6 +152,71 @@ end
         legacy = "{\"vals\":[1,2,3,4,5,6],\"info\":{\"type__\":\"uint8\",\"dim__\":[3,2]}}"
         got = @test_logs (:warn, r"format-1") mloads(JSON.parse(legacy))
         @test got == [1, 2, 3, 4, 5, 6]
+    end
+
+    # --- guards on payloads this reader does not implement --------------
+    @testset "malformed payloads fail loudly" begin
+        pay(info, vals; extra = "") = "{\"fmt\":2$(extra),\"vals\":$(vals),\"info\":[$(info)]}"
+
+        # order is what stands between this reader and a silent transpose
+        @test_throws MLoadsError mloads(JSON.parse(pay(
+            "{\"p\":[],\"t\":\"double\",\"d\":[2,3]}", "[1,2,3,4,5,6]";
+            extra = ",\"order\":\"C\"")))
+        @test_throws MLoadsError mloads(JSON.parse(pay(
+            "{\"p\":[],\"t\":\"double\",\"d\":[1,1]}", "1"; extra = ",\"base\":0")))
+
+        # char/string leaves must not silently become empty strings
+        @test_throws MLoadsError mloads(JSON.parse(pay(
+            "{\"p\":[],\"t\":\"char\",\"d\":[2,2]}", "42")))
+        @test_throws MLoadsError mloads(JSON.parse(pay(
+            "{\"p\":[],\"t\":\"string\",\"d\":[1,2]}", "[\"a\",7]")))
+
+        # a short `s` used to surface as a raw BoundsError
+        @test_throws MLoadsError mloads(JSON.parse(pay(
+            "{\"p\":[],\"t\":\"int64\",\"d\":[1,2],\"s\":[\"1\"]}", "[1,2]")))
+
+        # handing over the raw text is the likely user error for a
+        # parser-agnostic reader, and used to report "no vals/info"
+        @test_throws MLoadsError mloads(CASES["double_scalar"]["payload"])
+    end
+
+    @testset "scalar info fields are normalised" begin
+        # jsonencode writes a one-element array as a bare scalar
+        one = "{\"fmt\":2,\"vals\":1,\"info\":[{\"p\":[],\"t\":\"double\",\"d\":1}]}"
+        @test mloads(JSON.parse(one)) == 1.0
+        _, meta = mloads(JSON.parse(one); with_meta = true)
+        @test meta[()].dims == (1,)
+
+        # an nf record wrapped in a one-element array must not drop the Inf
+        wrapped = "{\"fmt\":2,\"vals\":[null],\"info\":[{\"p\":[],\"t\":\"double\"," *
+                  "\"d\":[1,1],\"nf\":[{\"i\":1,\"k\":[\"Inf\"]}]}]}"
+        @test mloads(JSON.parse(wrapped)) == Inf
+    end
+
+    @testset "struct field order is preserved" begin
+        @test collect(keys(decode("struct_readme"))) == ["foo", "bar", "nerf"]
+        @test collect(keys(decode("struct_mixed_fields"))) ==
+              ["num", "str", "vec", "mat", "tf", "nothing", "cel"]
+        @test decode("struct_readme") isa OrderedDict
+    end
+
+    @testset "field order is also in meta" begin
+        _, meta = mloads(JSON.parse(String(CASES["struct_readme"]["payload"]));
+                         with_meta = true)
+        @test meta[()].fields == ["foo", "bar", "nerf"]
+        @test meta[("bar", "t")].class == "double"
+        @test meta[("bar", "t")].dims == (10, 10)
+    end
+
+    @testset "non-finite value checks" begin
+        sg = decode("single_nonfinite")         # single([NaN Inf -Inf 1.5])
+        @test eltype(sg) == Float32
+        flat = vec(sg)
+        @test isnan(flat[1]) && flat[2] == Inf && flat[3] == -Inf && flat[4] == 1.5f0
+
+        nm = decode("nan_matrix")               # [1 NaN; Inf -Inf]
+        @test size(nm) == (2, 2)
+        @test nm[1, 1] == 1 && isnan(nm[1, 2]) && nm[2, 1] == Inf && nm[2, 2] == -Inf
     end
 
     # --- broad coverage: every payload decodes with the right root shape

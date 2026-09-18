@@ -40,11 +40,17 @@ MATLAB's cell semantics.
 
 `+json/readers/` has reference decoders, each about 100 lines:
 
-| file | needs | run its tests with |
-|------|-------|--------------------|
-| `mloads.py` | numpy (optional) | `python3 test_mloads.py` or `pytest` |
-| `mloads.jl` | any JSON parser  | `julia test_mloads.jl` |
-| `mloads.R`  | `jsonlite`       | `Rscript test_mloads.R` |
+| file | needs | entry point | run its tests with |
+|------|-------|-------------|--------------------|
+| `mloads.py` | numpy (optional) | `mloads(text_or_parsed)` | `python3 test_mloads.py` or `pytest` |
+| `mloads.jl` | a JSON parser, `OrderedCollections` | `mloads(parsed)` | `julia test_mloads.jl` |
+| `mloads.R`  | `jsonlite` | `mloads(text)` / `mloads_parsed(parsed)` | `Rscript test_mloads.R` |
+
+The entry points differ because the languages do: Python takes either text or a
+parsed value, Julia is parser-agnostic and takes only a parsed value (pass
+`JSON.parse(text)` or `JSON3.read(text, Any)`), and R splits the two. All three
+preserve struct field order, return column-major shapes, and refuse a payload
+whose declared `order`/`base` they do not implement.
 
 They are tested against `readers/testdata.json`, which MATLAB generates:
 

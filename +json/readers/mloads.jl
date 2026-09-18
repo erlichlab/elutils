@@ -4,9 +4,8 @@
 Read MATLAB `json.mdumps` format-2 payloads in Julia. Reference implementation
 of the format in `+json/FORMAT.md`. Read-only: there is no Julia writer.
 
-Deliberately **parser-agnostic** — it takes an already-parsed JSON value, so it
-adds no dependency of its own and works with whichever JSON package a project
-already has:
+**Parser-agnostic** — it takes an already-parsed JSON value, so it works with
+whichever JSON package a project already has:
 
 ```julia
 include("mloads.jl")
@@ -20,8 +19,8 @@ Type mapping
 ------------
 | MATLAB                    | Julia                                          |
 |:--------------------------|:-----------------------------------------------|
-| scalar struct             | `Dict{String,Any}`                             |
-| struct array              | `Vector{Dict{String,Any}}`, column-major       |
+| scalar struct             | `OrderedDict{String,Any}`                      |
+| struct array              | `Vector{OrderedDict{String,Any}}`, column-major|
 | cell array                | `Vector{Any}`, column-major                    |
 | numeric / logical array   | `Array{T,N}` with MATLAB's shape               |
 | numeric / logical scalar  | `Float64` / `Int64` / `Bool` / ...             |
@@ -29,14 +28,21 @@ Type mapping
 | char (2-D, >1 row)        | `Vector{String}`, one per row                  |
 | string array              | `Vector{String}` (`String` if scalar)          |
 
-Multidimensional cell and struct arrays come back as column-major vectors;
-`mloads(x; with_meta=true)` returns `(value, meta)` with every node's MATLAB
-class and dims if you need the shape.
+Multidimensional cell and struct arrays come back as column-major vectors.
+
+Structs come back as `OrderedDict`, so **field order is preserved** as MATLAB
+had it, matching the Python and R readers. That is the one dependency this file
+takes (`OrderedCollections`, which most Julia analysis environments already
+have transitively). Field order is also in the metadata:
+`mloads(x; with_meta=true)` returns `(value, meta)` mapping each node's path to
+`(class = ..., dims = ..., fields = ...)`.
 
 Leaves are stored flattened column-major, which is Julia's own memory order, so
 `reshape` is correct as written and needs no permuting.
 """
 module MLoads
+
+using OrderedCollections: OrderedDict
 
 export mloads, MLoadsError
 
@@ -66,6 +72,9 @@ Rebuild a MATLAB value from a parsed `json.mdumps` payload. Pass the result of
 `JSON.parse` / `JSON3.read(..., Any)`, not the raw text.
 """
 function mloads(parsed; with_meta::Bool = false)
+    parsed isa AbstractString && throw(MLoadsError(
+        "pass a parsed JSON value -- JSON.parse(text) or JSON3.read(text, Any) -- " *
+        "not the raw text"))
     obj = _asdict(parsed)
     if obj === nothing || !haskey(obj, "vals") || !haskey(obj, "info")
         throw(MLoadsError("not a json.mdumps payload (no vals/info)"))
@@ -79,6 +88,17 @@ function mloads(parsed; with_meta::Bool = false)
     end
     Int(obj["fmt"]) == 2 || throw(MLoadsError("unsupported format version $(obj["fmt"])"))
 
+    # The payload states its own flattening order and index base. Trusting them
+    # blindly is how a future format change turns into a silently transposed
+    # matrix, so refuse anything this reader does not actually implement.
+    order = String(get(obj, "order", "F"))
+    order == "F" || throw(MLoadsError(
+        "payload declares order=\"$order\"; this reader only implements " *
+        "column-major \"F\" (see FORMAT.md)"))
+    base = Int(get(obj, "base", 1))
+    base == 1 || throw(MLoadsError(
+        "payload declares base=$base; this reader only implements 1-based info paths"))
+
     info = obj["info"]
     info isa AbstractVector || throw(MLoadsError("info must be a list"))
 
@@ -88,22 +108,29 @@ function mloads(parsed; with_meta::Bool = false)
 
     if with_meta
         meta = Dict(Tuple(_aslist(get(e, "p", []))) =>
-                    (String(e["t"]), Tuple(Int.(_aslist(e["d"])))) for e in _asdict.(info))
+                    (class = String(e["t"]),
+                     dims = Tuple(Int.(_aslist(e["d"]))),
+                     fields = String.(_aslist(get(e, "f", []))))
+                    for e in _asdict.(info))
         return value, meta
     end
     return value
 end
 
 # ---------------------------------------------------------------------------
-# JSON3 hands back its own object type rather than a Dict, so normalise once
-# here instead of special-casing the parser everywhere below.
-_asdict(x::AbstractDict) = x
-function _asdict(x)
-    if !(x isa AbstractVector) && !(x isa AbstractString) && !(x isa Number) &&
-       x !== nothing && applicable(keys, x) && applicable(getindex, x, :a)
-        return Dict{String,Any}(String(k) => x[k] for k in keys(x))
-    end
-    return nothing
+# Parsers disagree about key types: JSON.jl gives Object{String,Any}, JSON3
+# gives Object{Symbol,Any}. String-keyed objects pass straight through; anything
+# else keyed differently gets normalised once here, so the rest of the reader
+# can assume String lookup.
+_asdict(x::AbstractDict{<:AbstractString,<:Any}) = x
+_asdict(x::AbstractDict) = Dict{String,Any}(String(k) => v for (k, v) in x)
+_asdict(::Any) = nothing
+
+"""Readable node path, for error messages."""
+function _where(e)
+    segs = _aslist(get(e, "p", []))
+    isempty(segs) && return "<root>"
+    "<root>" * join(s isa AbstractString ? "." * String(s) : "{$(Int(s))}" for s in segs)
 end
 
 """A JSON scalar stands in for a one-element array; normalise to a vector."""
@@ -147,7 +174,7 @@ function _build(raw, info, i::Int)
         fields = String.(_aslist(get(e, "f", [])))
         if n == 1
             src = _asdict(raw)
-            out = Dict{String,Any}()
+            out = OrderedDict{String,Any}()
             for name in fields
                 v, i = _build(src === nothing ? nothing : get(src, name, nothing), info, i)
                 out[name] = v
@@ -155,10 +182,10 @@ function _build(raw, info, i::Int)
             return out, i
         end
         kids = _elements(raw, n)
-        out = Vector{Dict{String,Any}}(undef, max(n, 0))
+        out = Vector{OrderedDict{String,Any}}(undef, max(n, 0))
         for k in 1:n
             src = _asdict(kids[k])
-            elem = Dict{String,Any}()
+            elem = OrderedDict{String,Any}()
             for name in fields
                 v, i = _build(src === nothing ? nothing : get(src, name, nothing), info, i)
                 elem[name] = v
@@ -168,7 +195,9 @@ function _build(raw, info, i::Int)
         return out, i
 
     elseif t == "char"
-        s = raw isa AbstractString ? String(raw) : ""
+        raw isa AbstractString || throw(MLoadsError(
+            "char leaf at $(_where(e)) expected a JSON string, got $(typeof(raw))"))
+        s = String(raw)
         if length(dims) == 2 && dims[1] > 1
             rows, cols = dims[1], dims[2]
             ch = collect(s)
@@ -179,7 +208,12 @@ function _build(raw, info, i::Int)
         return s, i
 
     elseif t == "string"
-        items = [x isa AbstractString ? String(x) : "" for x in _aslist(raw)]
+        items = String[]
+        for x in _aslist(raw)
+            x isa AbstractString || throw(MLoadsError(
+                "string leaf at $(_where(e)) contains a $(typeof(x)), expected JSON strings"))
+            push!(items, String(x))
+        end
         while length(items) < n
             push!(items, "")
         end
@@ -201,7 +235,10 @@ end
 function _numeric_leaf(raw, e, n::Int, ::Type{T}) where {T}
     if haskey(e, "s") && !isempty(_aslist(e["s"]))
         # exact decimal strings for 64-bit ints beyond 2^53
-        return T[parse(T, String(x)) for x in _aslist(e["s"])][1:n]
+        strs = _aslist(e["s"])
+        length(strs) >= n || throw(MLoadsError(
+            "info.s carries $(length(strs)) values for a $n-element leaf"))
+        return T[parse(T, String(x)) for x in strs[1:n]]
     end
 
     vals = _aslist(raw)
@@ -215,7 +252,11 @@ function _numeric_leaf(raw, e, n::Int, ::Type{T}) where {T}
         end
     end
 
-    nf = _asdict(get(e, "nf", nothing))
+    nfraw = get(e, "nf", nothing)
+    if nfraw isa AbstractVector && length(nfraw) == 1
+        nfraw = nfraw[1]
+    end
+    nf = _asdict(nfraw)
     if nf !== nothing && T <: AbstractFloat
         idxs = _aslist(get(nf, "i", []))
         kinds = _aslist(get(nf, "k", []))

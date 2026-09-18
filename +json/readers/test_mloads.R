@@ -6,8 +6,16 @@
 # jsonlite. testdata.json is written by `test.gen_reader_testdata` in MATLAB;
 # regenerate it after any change to the wire format.
 
-here <- tryCatch(dirname(normalizePath(sys.frame(1)$ofile)), error = function(e) ".")
-if (!file.exists(file.path(here, "mloads.R"))) here <- "."
+# Resolve this script's directory so the suite runs from anywhere: --file= is
+# what Rscript passes, ofile is what source() sets.
+.script_dir <- function() {
+  a <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
+  if (length(a) == 1L) return(dirname(normalizePath(sub("^--file=", "", a))))
+  of <- tryCatch(sys.frame(1)$ofile, error = function(e) NULL)
+  if (!is.null(of)) return(dirname(normalizePath(of)))
+  getwd()
+}
+here <- .script_dir()
 source(file.path(here, "mloads.R"))
 
 NUMERIC <- c("double", "single", "logical", "int8", "uint8", "int16", "uint16",
@@ -201,6 +209,74 @@ for (name in sort(names(CASES))) {
     expect(paste0(name, ": character"), is.character(got))
   }
 }
+
+# --- guards on payloads this reader does not implement -----------------
+
+pay <- function(info, vals, extra = "") {
+  paste0('{"fmt":2', extra, ',"vals":', vals, ',"info":[', info, ']}')
+}
+
+expect_error <- function(label, text) {
+  threw <- tryCatch({ suppressWarnings(mloads(text)); FALSE },
+                    error = function(e) TRUE)
+  expect(label, threw)
+}
+
+# order is what stands between this reader and a silent transpose
+expect_error("rejects order=C",
+             pay('{"p":[],"t":"double","d":[2,3]}', "[1,2,3,4,5,6]", ',"order":"C"'))
+expect_error("rejects base=0",
+             pay('{"p":[],"t":"double","d":[1,1]}', "1", ',"base":0'))
+# char/string leaves must not silently become empty strings
+expect_error("rejects non-string char leaf",
+             pay('{"p":[],"t":"char","d":[2,2]}', "42"))
+expect_error("rejects non-string in string leaf",
+             pay('{"p":[],"t":"string","d":[1,2]}', '["a",7]'))
+
+# nf only means anything for the float classes; it used to leave NaN sitting
+# inside an array that info declares to be int32
+expect("nf ignored on an integer leaf", {
+  got <- suppressWarnings(mloads(
+    pay('{"p":[],"t":"int32","d":[1,1],"nf":{"i":1,"k":["NaN"]}}', "[0]")))
+  identical(as.numeric(got), 0)
+})
+# a null in an integer leaf means zero, as MATLAB's cast(NaN,'int32') gives
+expect("null in an integer leaf is zero", {
+  got <- suppressWarnings(mloads(pay('{"p":[],"t":"uint8","d":[1,2]}', "[null,7]")))
+  identical(as.vector(got), c(0, 7))
+})
+# an nf record wrapped in a one-element array must not drop the Inf
+expect("wrapped nf record still applies", {
+  got <- suppressWarnings(mloads(pay(
+    '{"p":[],"t":"double","d":[1,1],"nf":[{"i":1,"k":["Inf"]}]}', "[null]")))
+  identical(as.numeric(got), Inf)
+})
+# jsonencode writes a one-element array as a bare scalar
+expect("scalar dims normalised", {
+  identical(as.numeric(suppressWarnings(mloads(
+    pay('{"p":[],"t":"double","d":1}', "1")))), 1)
+})
+
+# --- metadata ----------------------------------------------------------
+
+m <- suppressWarnings(mloads(CASES[["struct_readme"]]$payload, with_meta = TRUE))
+expect("with_meta returns value and meta",
+       all(c("value", "meta") %in% names(m)))
+expect("with_meta root class", identical(m$meta[[1]]$class, "struct"))
+expect("with_meta dims", identical(m$meta[[4]]$dims, c(10L, 10L)))
+
+# --- value checks for the riskier non-finite paths --------------------
+
+sg <- as.vector(decode("single_nonfinite"))    # single([NaN Inf -Inf 1.5])
+expect("single_nonfinite NaN", is.nan(sg[1]))
+expect("single_nonfinite Inf", sg[2] == Inf)
+expect("single_nonfinite -Inf", sg[3] == -Inf)
+expect("single_nonfinite value", isTRUE(all.equal(sg[4], 1.5)))
+
+nm <- decode("nan_matrix")                     # [1 NaN; Inf -Inf]
+expect("nan_matrix dims", identical(dim(nm), c(2L, 2L)))
+expect("nan_matrix values",
+       nm[1, 1] == 1 && is.nan(nm[1, 2]) && nm[2, 1] == Inf && nm[2, 2] == -Inf)
 
 cat("\n", npass, " passed, ", nfail, " failed\n", sep = "")
 if (nfail > 0) quit(status = 1)

@@ -58,7 +58,7 @@ except ImportError:  # pytest is optional; `python3 test_mloads.py` still works
         warns = _Warns
         mark = _Mark
 
-from mloads import mloads
+from mloads import mloads, MLoadsError
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 _NUMERIC = {
@@ -288,6 +288,107 @@ def test_every_payload_decodes(name):
         assert isinstance(got, (str, list))
     elif case["class"] == "string":
         assert isinstance(got, (str, list))
+
+
+# --- guards on payloads this reader does not implement ------------------
+
+def _payload(info, vals, **top):
+    d = {"fmt": 2, "order": "F", "base": 1, "vals": vals, "info": info}
+    d.update(top)
+    return json.dumps(d)
+
+
+def _expect_error(fn, match=None):
+    try:
+        fn()
+    except MLoadsError as exc:
+        if match is not None:
+            assert match in str(exc), "expected %r in %r" % (match, str(exc))
+        return
+    raise AssertionError("expected MLoadsError, none raised")
+
+
+def test_rejects_row_major_order():
+    """order is what stands between this reader and a silent transpose."""
+    bad = _payload([{"p": [], "t": "double", "d": [2, 3]}], [1, 2, 3, 4, 5, 6], order="C")
+    _expect_error(lambda: mloads(bad), "order")
+
+
+def test_rejects_zero_based_paths():
+    bad = _payload([{"p": [], "t": "double", "d": [1, 1]}], 1, base=0)
+    _expect_error(lambda: mloads(bad), "base")
+
+
+def test_rejects_non_string_char_leaf():
+    bad = _payload([{"p": [], "t": "char", "d": [2, 2]}], 42)
+    _expect_error(lambda: mloads(bad), "char leaf")
+
+
+def test_rejects_short_exact_int_strings():
+    bad = _payload([{"p": [], "t": "int64", "d": [1, 2], "s": ["1"]}], [1, 2])
+    _expect_error(lambda: mloads(bad), "info.s")
+
+
+def test_null_in_a_logical_leaf_is_false_not_true():
+    """nan is truthy, so treating an interior null as nan made it silently True."""
+    got = mloads(_payload([{"p": [], "t": "logical", "d": [1, 2]}], [None, 1]))
+    assert list(got.reshape(-1)) == [False, True]
+
+
+def test_scalar_info_fields_are_normalised():
+    """jsonencode writes a one-element array as a bare scalar."""
+    one = _payload([{"p": [], "t": "double", "d": 1}], 1)
+    assert mloads(one) == 1.0
+    value, meta = mloads(one, with_meta=True)
+    assert meta[()] == ("double", (1,))
+
+
+# --- metadata ----------------------------------------------------------
+
+def test_with_meta_reports_class_and_dims():
+    value, meta = mloads(CASES["struct_readme"]["payload"], with_meta=True)
+    assert meta[()][0] == "struct"
+    assert meta[("bar", "t")] == ("double", (10, 10))
+    assert meta[("bar", "d")] == ("char", (1, 12))
+    assert meta[("nerf",)] == ("double", (1, 10))
+
+
+# --- value checks for the riskier non-finite paths ---------------------
+
+def test_single_nonfinite_values():
+    got = decode("single_nonfinite")        # single([NaN Inf -Inf 1.5])
+    assert got.dtype == np.float32
+    flat = list(got.reshape(-1, order="F"))
+    assert math.isnan(flat[0])
+    assert flat[1] == math.inf
+    assert flat[2] == -math.inf
+    assert flat[3] == 1.5
+
+
+def test_nan_matrix_values():
+    got = decode("nan_matrix")              # [1 NaN; Inf -Inf]
+    assert got.shape == (2, 2)
+    assert got[0, 0] == 1
+    assert math.isnan(got[0, 1])
+    assert got[1, 0] == math.inf
+    assert got[1, 1] == -math.inf
+
+
+# --- the documented no-numpy fallback ---------------------------------
+
+def test_works_without_numpy():
+    """Array leaves degrade to flat column-major lists; shape/dtype are lost."""
+    import mloads as _m
+
+    saved = _m._np
+    _m._np = None
+    try:
+        for name in sorted(CASES):
+            _m.mloads(CASES[name]["payload"])          # must not raise
+        assert _m.mloads(CASES["matrix_2d"]["payload"]) == [1, 2, 3, 4, 5, 6]
+        assert _m.mloads(CASES["char_row"]["payload"]) == "a char array"
+    finally:
+        _m._np = saved
 
 
 def main():

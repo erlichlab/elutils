@@ -93,6 +93,22 @@ def mloads(src, with_meta=False):
     if int(obj["fmt"]) != 2:
         raise MLoadsError("unsupported format version %r" % (obj["fmt"],))
 
+    # The payload states its own flattening order and index base. Trusting them
+    # blindly is how a future format change turns into a silently transposed
+    # matrix, so refuse anything this reader does not actually implement.
+    order = obj.get("order", "F")
+    if order != "F":
+        raise MLoadsError(
+            "payload declares order=%r; this reader only implements column-major "
+            "'F' (see FORMAT.md)" % (order,)
+        )
+    base = int(obj.get("base", 1))
+    if base != 1:
+        raise MLoadsError(
+            "payload declares base=%r; this reader only implements 1-based info "
+            "paths" % (base,)
+        )
+
     info = obj["info"]
     if not isinstance(info, list):
         raise MLoadsError("info must be a list")
@@ -107,7 +123,7 @@ def mloads(src, with_meta=False):
 
     if with_meta:
         meta = {
-            tuple(_aslist(e.get("p", []))): (e["t"], tuple(int(x) for x in e["d"]))
+            tuple(_aslist(e.get("p", []))): (e["t"], tuple(int(x) for x in _aslist(e["d"])))
             for e in info
         }
         return value, meta
@@ -115,6 +131,14 @@ def mloads(src, with_meta=False):
 
 
 # ---------------------------------------------------------------------------
+def _where(e):
+    """Readable node path, for error messages."""
+    segs = _aslist(e.get("p", []))
+    return "<root>" + "".join(
+        ".%s" % s if isinstance(s, str) else "{%d}" % s for s in segs
+    )
+
+
 def _aslist(x):
     """JSON scalars stand in for one-element arrays; normalise to a list."""
     if x is None:
@@ -189,7 +213,12 @@ def _build(raw, info, i):
         return out, i
 
     if t == "char":
-        s = raw if isinstance(raw, str) else ""
+        if not isinstance(raw, str):
+            raise MLoadsError(
+                "char leaf at %s expected a JSON string, got %s"
+                % (_where(e), type(raw).__name__)
+            )
+        s = raw
         if len(dims) == 2 and dims[0] > 1:
             rows, cols = dims[0], dims[1]
             if len(s) < rows * cols:
@@ -201,7 +230,14 @@ def _build(raw, info, i):
         return s, i
 
     if t == "string":
-        items = [x if isinstance(x, str) else "" for x in _aslist(raw)]
+        items = _aslist(raw)
+        for x in items:
+            if not isinstance(x, str):
+                raise MLoadsError(
+                    "string leaf at %s contains a %s, expected JSON strings"
+                    % (_where(e), type(x).__name__)
+                )
+        items = list(items)
         while len(items) < n:
             items.append("")
         items = items[:n]
@@ -226,17 +262,24 @@ def _numeric_leaf(raw, e, n, t):
     """Flat column-major values for one array leaf, with nulls resolved."""
     if e.get("s"):
         # exact decimal strings for 64-bit ints beyond 2**53
-        flat = [int(x) for x in _aslist(e["s"])]
-        while len(flat) < n:
-            flat.append(0)
-        return flat[:n]
+        strs = _aslist(e["s"])
+        if len(strs) < n:
+            raise MLoadsError(
+                "info.s at %s carries %d values for a %d-element leaf"
+                % (_where(e), len(strs), n)
+            )
+        return [int(x) for x in strs[:n]]
 
-    flat = [math.nan if x is None else x for x in _aslist(raw)]
+    # One filler for both interior and padded nulls. Using nan for the first and
+    # a type-aware value for the second made a null mean different things
+    # depending on where it sat -- in a logical leaf nan is truthy, so an
+    # interior null silently became True.
+    filler = math.nan if t in ("double", "single") else 0
+    flat = [filler if x is None else x for x in _aslist(raw)]
 
     # Pad before applying nf: an all-non-finite leaf encodes as bare nulls, and
     # a scalar null decodes to no elements at all, so the nf indices below can
     # point past whatever the parser gave us.
-    filler = math.nan if t in ("double", "single") else 0
     while len(flat) < n:
         flat.append(filler)
     flat = flat[:n]

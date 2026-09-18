@@ -52,6 +52,20 @@ mloads_parsed <- function(obj, with_meta = FALSE) {
     stop("unsupported format version ", obj[["fmt"]], call. = FALSE)
   }
 
+  # The payload states its own flattening order and index base. Trusting them
+  # blindly is how a future format change turns into a silently transposed
+  # matrix, so refuse anything this reader does not actually implement.
+  order <- if (is.null(obj[["order"]])) "F" else as.character(obj[["order"]])
+  if (!identical(order, "F")) {
+    stop('payload declares order="', order, '"; this reader only implements ',
+         'column-major "F" (see FORMAT.md)', call. = FALSE)
+  }
+  base <- if (is.null(obj[["base"]])) 1L else as.integer(obj[["base"]])
+  if (!identical(base, 1L)) {
+    stop("payload declares base=", base, "; this reader only implements ",
+         "1-based info paths", call. = FALSE)
+  }
+
   info <- obj[["info"]]
   if (!is.list(info)) stop("info must be a list", call. = FALSE)
 
@@ -75,6 +89,16 @@ mloads_parsed <- function(obj, with_meta = FALSE) {
 
 .MATLAB_NUMERIC <- c("double", "single", "int8", "uint8", "int16", "uint16",
                      "int32", "uint32", "int64", "uint64", "logical")
+
+# Readable node path, for error messages.
+.where <- function(e) {
+  segs <- .aslist(e[["p"]])
+  if (length(segs) == 0L) return("<root>")
+  parts <- vapply(segs, function(s) {
+    if (is.character(s)) paste0(".", s) else sprintf("{%d}", as.integer(s))
+  }, character(1))
+  paste0("<root>", paste(parts, collapse = ""))
+}
 
 # A JSON scalar stands in for a one-element array; normalise to a list.
 .aslist <- function(x) {
@@ -145,7 +169,11 @@ mloads_parsed <- function(obj, with_meta = FALSE) {
   }
 
   if (identical(t, "char")) {
-    s <- if (is.character(raw) && length(raw) == 1L) raw else ""
+    if (!(is.character(raw) && length(raw) == 1L)) {
+      stop("char leaf at ", .where(e), " expected a JSON string, got ",
+           class(raw)[1], call. = FALSE)
+    }
+    s <- raw
     if (length(dims) == 2L && dims[1] > 1L) {
       rows <- dims[1]; cols <- dims[2]
       ch <- strsplit(s, "", fixed = TRUE)[[1]]
@@ -161,7 +189,11 @@ mloads_parsed <- function(obj, with_meta = FALSE) {
 
   if (identical(t, "string")) {
     items <- vapply(.aslist(raw), function(x) {
-      if (is.character(x) && length(x) == 1L) x else ""
+      if (!(is.character(x) && length(x) == 1L)) {
+        stop("string leaf at ", .where(e), " contains a ", class(x)[1],
+             ", expected JSON strings", call. = FALSE)
+      }
+      x
     }, character(1))
     if (length(items) < n) items <- c(items, rep("", n - length(items)))
     return(list(value = items[seq_len(n)], i = i))
@@ -179,6 +211,7 @@ mloads_parsed <- function(obj, with_meta = FALSE) {
 
 .numeric_leaf <- function(raw, e, n, t) {
   logical_leaf <- identical(t, "logical")
+  float_leaf <- t %in% c("double", "single")
 
   if (!is.null(e[["s"]]) && length(.aslist(e[["s"]])) > 0L) {
     # Exact decimal strings for 64-bit ints beyond 2^53. R has no native int64,
@@ -193,7 +226,9 @@ mloads_parsed <- function(obj, with_meta = FALSE) {
   }
 
   vals <- .aslist(raw)
-  filler <- if (logical_leaf) NA else NA_real_
+  # A null is only ever a non-finite float; in an integer leaf it means zero,
+  # which is what MATLAB's cast(NaN, 'int32') gives.
+  filler <- if (logical_leaf) NA else if (float_leaf) NA_real_ else 0
   flat <- rep(filler, max(n, 0L))
   for (k in seq_len(min(n, length(vals)))) {
     v <- vals[[k]]
@@ -203,7 +238,10 @@ mloads_parsed <- function(obj, with_meta = FALSE) {
   }
 
   nf <- e[["nf"]]
-  if (!is.null(nf) && !logical_leaf) {
+  # The MATLAB reader tolerates an nf record wrapped in a one-element array;
+  # silently ignoring that shape would drop every non-finite in the leaf.
+  if (is.list(nf) && is.null(names(nf)) && length(nf) == 1L) nf <- nf[[1]]
+  if (!is.null(nf) && float_leaf) {
     idxs <- as.integer(unlist(.aslist(nf[["i"]])))
     kinds <- vapply(.aslist(nf[["k"]]), as.character, character(1))
     for (q in seq_along(idxs)) {
