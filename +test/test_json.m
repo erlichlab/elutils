@@ -314,22 +314,26 @@ nfail = nfail + nbad2;
 %% ---- compression path ------------------------------------------------
 fprintf('\n=== compression ===\n');
 ncomp = 0;
-A = test.json_cases();
-for nm = {'struct_readme', 'char_unicode', 'combo_2', 'nonfinite_mix'}
+% Every case, not a sample: zlibencode casts char with a saturating uint8(),
+% so the compressed path needs the same coverage as the plain one or a
+% non-ASCII field can be clamped without anyone noticing.
+ztot = 0;
+for k = 1:n
     try
-        v = A{find(strcmp(A(:, 1), nm{1}), 1), 2};
+        v = cases{k, 2};
         z = json.mdumps(v, 'compress', true);
         assert(isa(z, 'uint8'), 'compressed output should be bytes, not text');
+        ztot = ztot + numel(z);
         w = json.mloads(z);
         assert(isequaln(v, w), 'compressed round-trip mismatch');
         [ok, why] = strict_equal(v, w, '');
         assert(ok, '%s', why);
     catch me
         ncomp = ncomp + 1;
-        fprintf(2, '  FAIL compression %-16s %s\n', nm{1}, me.message);
+        fprintf(2, '  FAIL compression %-22s %s\n', cases{k, 1}, me.message);
     end
 end
-fprintf('compression: %d/4 passed\n', 4 - ncomp);
+fprintf('compression: %d/%d passed (%d bytes compressed)\n', n - ncomp, n, ztot);
 nfail = nfail + ncomp;
 
 %% ---- report ---------------------------------------------------------
