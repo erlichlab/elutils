@@ -208,6 +208,18 @@ def test_structs():
     assert got["type__"] == "collides with v1 sentinel"
 
 
+def test_classdef_object_decodes_as_a_struct():
+    """Stored as its struct() contents; info carries the real class name."""
+    got = decode("classdef_object")
+    assert list(got) == ["alpha", "beta", "gamma"]
+    assert got["alpha"] == 7.0
+    assert got["beta"] == "two"
+    assert got["gamma"][0] == 3.0
+    np.testing.assert_array_equal(got["gamma"][1], [[4.0, 5.0]])
+    _, meta = mloads(CASES["classdef_object"]["payload"], with_meta=True)
+    assert meta[()][0] == "test.json_testobj"
+
+
 def test_struct_field_order_is_preserved():
     assert list(decode("struct_readme").keys()) == ["foo", "bar", "nerf"]
 

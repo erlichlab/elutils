@@ -78,6 +78,8 @@ add('string_scalar',        "hello");
 add('string_array',         ["a", "bb", "ccc"]);
 add('string_2d',            reshape(["a" "b" "c" "d"], 2, 2));
 add('string_empty_elem',    ["", "x"]);
+add('string_empty_0x0',     strings(0, 0));
+add('string_empty_0x3',     strings(0, 3));
 
 %% ---- simple structs --------------------------------------------------
 add('struct_simple',        struct('a', 1, 'b', 2));
@@ -115,6 +117,26 @@ add('cell_struct_same',     {struct('a', 1), struct('a', 2)});
 add('cell_of_struct_arr',   {struct('a', {1, 2}), struct('a', {3, 4, 5})});
 add('cell_nan',             {NaN, Inf, -Inf});
 add('cell_nested_empty',    {{}, {{}}, {{{}}}});
+
+%% ---- siblings that collapse into one N-D block ----------------------
+% jsondecode folds a JSON array of equal-length arrays into a single N-D
+% block. For arrays of objects that means a struct ARRAY, so a cell whose
+% siblings are equal-length struct arrays with matching fields is the shape
+% that breaks a reader handling only the numeric case. Unequal lengths or
+% differing fields decode to a cell instead and are the easy path.
+add('cell_equal_struct_arrs', {struct('a', {1, 2}), struct('a', {3, 4})});
+add('cell_equal_struct_3',    {struct('a', {1, 2}), struct('a', {3, 4}), ...
+                               struct('a', {5, 6})});
+add('cell_equal_struct_2f',   {struct('a', {1, 2}, 'b', {'x', 'y'}), ...
+                               struct('a', {3, 4}, 'b', {'p', 'q'})});
+add('cell_cells_of_structs',  {{struct('a', 1), struct('a', 2)}, ...
+                               {struct('a', 3), struct('a', 4)}});
+add('cell_2x2_struct_arrs',   {reshape(struct('v', {1, 2, 3, 4}), 2, 2), ...
+                               reshape(struct('v', {5, 6, 7, 8}), 2, 2)});
+add('struct_of_equal_arrs',   struct('rows', {{struct('a', {1, 2}), ...
+                               struct('a', {3, 4})}}));
+add('cell_deep_struct_arrs',  {{struct('a', {1, 2}), struct('a', {3, 4})}, ...
+                               {struct('a', {5, 6}), struct('a', {7, 8})}});
 
 %% ---- deep / combined ------------------------------------------------
 add('combo_1',              struct('lvl1', struct('lvl2', {{struct('lvl3', ...

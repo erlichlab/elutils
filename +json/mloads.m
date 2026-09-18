@@ -16,8 +16,8 @@ function out = mloads(jstr, varargin)
 % an extension, so even the oldest rows -- written by the json.tojson mex
 % before jsondecode existed -- read natively, with Inf still distinct from
 % NaN. A rewrite of those literals is kept for a MATLAB old enough to reject
-% them, but it runs only when the text fails to parse, so a string value that
-% merely *contains* the word NaN is no longer corrupted.
+% them; it must stay behind the parse attempt so that a string value merely
+% containing the word NaN is never rewritten.
 %
 % OPTIONS
 %   decompress   force zlib decompression on/off. By default it is inferred:
@@ -33,14 +33,21 @@ end
 
 if ischar(jstr)
     decompress = false;
-elseif isstring(jstr) && isscalar(jstr)
+elseif isstring(jstr)
+    if ~isscalar(jstr)
+        error('json:mloads:input', ...
+            'Expected one payload; got a %s string array.', mat2str(size(jstr)));
+    end
     jstr = char(jstr);
     decompress = false;
-elseif char(jstr(1)) == '{'
-    decompress = false;
-    jstr = char(jstr(:))';
+elseif isnumeric(jstr) || islogical(jstr)
+    % A byte vector is either text or a zlib blob; JSON always opens with '{'.
+    decompress = char(jstr(1)) ~= '{';
+    if ~decompress
+        jstr = char(jstr(:))';
+    end
 else
-    decompress = true;
+    error('json:mloads:input', 'Cannot read a payload from a %s.', class(jstr));
 end
 
 [decompress, args] = utils.inputordefault('decompress', decompress, varargin);
@@ -50,20 +57,24 @@ if ~isempty(args)
 end
 
 if decompress
-    jstr = char(utils.zlibdecode(jstr));
+    jstr = native2unicode(utils.zlibdecode(jstr), 'UTF-8');
 end
 jstr = reshape(jstr, 1, numel(jstr));
 
 J = decode_json(jstr);
 
 if isstruct(J) && isscalar(J) && isfield(J, 'fmt') && isfield(J, 'vals') && isfield(J, 'info')
-    fmt = double(J.fmt);
-    if fmt ~= 2
-        error('json:mloads:version', ...
-            'Payload declares format %g, which this json.mloads does not understand.', fmt);
+    if ~isnumeric(J.fmt) || ~isscalar(J.fmt)
+        error('json:mloads:version', 'Payload has a non-numeric fmt field.');
     end
+    if double(J.fmt) ~= 2
+        error('json:mloads:version', ...
+            'Payload declares format %g, which this json.mloads does not understand.', ...
+            double(J.fmt));
+    end
+    check_order_base(J);
     out = build_v2(J);
-elseif isstruct(J) && isfield(J, 'vals') && isfield(J, 'info')
+elseif isstruct(J) && isscalar(J) && isfield(J, 'vals') && isfield(J, 'info')
     out = json.mloads_v1(J);
 else
     error('json:mloads:unrecognised', ...
@@ -71,6 +82,28 @@ else
          'Use jsondecode directly for plain JSON.'], class(J));
 end
 
+end
+
+% -------------------------------------------------------------------------
+function check_order_base(J)
+% A payload states its own flattening order and index base. Reading an
+% "order":"C" payload as column-major would transpose every array in it
+% without a word, so refuse anything this reader does not implement.
+if isfield(J, 'order')
+    ord = J.order;
+    if ~ischar(ord) || ~strcmp(reshape(ord, 1, []), 'F')
+        error('json:mloads:order', ...
+            ['Payload declares order "%s"; this json.mloads only implements ', ...
+             'column-major "F".'], char(string(ord)));
+    end
+end
+if isfield(J, 'base')
+    if ~isnumeric(J.base) || ~isscalar(J.base) || double(J.base) ~= 1
+        error('json:mloads:base', ...
+            ['Payload declares base %s; this json.mloads only implements ', ...
+             '1-based info paths.'], char(string(J.base)));
+    end
+end
 end
 
 % =========================================================================
@@ -86,9 +119,9 @@ end
 % encoder wrote. Current releases parse those natively, keeping Inf distinct
 % from NaN, so this only fires on a MATLAB old enough to reject them.
 %
-% It runs after the parse attempt rather than before, which is what v1 did
-% unconditionally: a string value containing the word NaN stays intact, and a
-% bare Infinity that jsondecode can read is never flattened to null.
+% It must stay behind the strict parse. Rewriting up front would corrupt any
+% string value containing the word NaN, and would flatten to null a bare
+% Infinity that jsondecode can read perfectly well.
 fixed = regexprep(jstr, '(-?)\<Infinity\>', 'null');
 fixed = regexprep(fixed, '\<NaN\>', 'null');
 try
@@ -119,8 +152,9 @@ info = norm_info(J.info);
 [out, ix] = build_node(J.vals, info, 1);
 
 if ix ~= numel(info) + 1
-    warning('json:mloads:info', ...
-        'Consumed %d of %d info entries; the payload may be malformed.', ix - 1, numel(info));
+    error('json:mloads:info', ...
+        ['Consumed %d of %d info entries: the info list does not describe the ', ...
+         'same structure as vals.'], ix - 1, numel(info));
 end
 
 end
@@ -207,20 +241,16 @@ switch t
     case 'char'
         x = tochars(raw);
         x = reshape(x, 1, numel(x));
-        if numel(x) < n
-            x = [x repmat(' ', 1, n - numel(x))];
-        end
-        v = reshape(x(1:n), d);
+        check_count(numel(x), n, e, 'characters');
+        v = reshape(x, d);
 
     case 'string'
         if n == 0
             v = reshape(strings(0, 0), d);
         else
             c = tocellstr(raw);
-            if numel(c) < n
-                c(numel(c) + 1:n) = {''};
-            end
-            v = reshape(string(c(1:n)), d);
+            check_count(numel(c), n, e, 'strings');
+            v = reshape(string(c), d);
         end
 
     case {'double', 'single', 'int8', 'uint8', 'int16', 'uint16', ...
@@ -228,17 +258,14 @@ switch t
         if isfield(e, 's') && ~isempty(e.s)
             % Exact decimal strings for 64-bit integers beyond 2^53.
             ss = tocellstr(e.s);
+            check_count(numel(ss), n, e, 'info.s entries');
             v = zeros(n, 1, t);
-            for q = 1:min(n, numel(ss))
-                v(q) = str2int(ss{q}, t);
+            for q = 1:n
+                v(q) = str2int(ss{q}, t, e);
             end
             v = reshape(v, d);
         else
-            x = tonum(raw);
-            if numel(x) < n
-                x = [x; nan(n - numel(x), 1)];
-            end
-            x = x(1:n);
+            x = pad_nonfinite(tonum(raw), n, e);
             x = restore_nonfinite(x, e);
             v = reshape(cast(x, t), d);
         end
@@ -248,6 +275,73 @@ switch t
             'Unknown class "%s" in info entry %d.', t, ix - 1);
 end
 
+end
+
+% -------------------------------------------------------------------------
+function check_count(got, want, e, what)
+if got ~= want
+    error('json:mloads:shape', ...
+        'Leaf at %s carries %d %s for a %d-element array.', wstr(e), got, what, want);
+end
+end
+
+% -------------------------------------------------------------------------
+function x = pad_nonfinite(x, n, e)
+% jsonencode writes NaN, Inf and -Inf all as null, and a bare scalar null
+% decodes to no elements at all -- so a numeric leaf may legitimately arrive
+% short. Every missing slot must be accounted for by an nf record; anything
+% else is a malformed payload rather than something to quietly pad.
+if numel(x) == n
+    return
+end
+if numel(x) > n
+    error('json:mloads:shape', ...
+        'Leaf at %s carries %d values for a %d-element array.', wstr(e), numel(x), n);
+end
+missing = (numel(x) + 1):n;
+if ~all(ismember(missing, nf_index(e)))
+    error('json:mloads:shape', ...
+        ['Leaf at %s carries %d values for a %d-element array, and the rest are ', ...
+         'not listed as non-finite.'], wstr(e), numel(x), n);
+end
+x = [x; nan(n - numel(x), 1)];
+end
+
+% -------------------------------------------------------------------------
+function ii = nf_index(e)
+ii = [];
+if ~isfield(e, 'nf') || isempty(e.nf)
+    return
+end
+nf = e.nf;
+if iscell(nf)
+    nf = nf{1};
+end
+if isstruct(nf) && isfield(nf, 'i')
+    ii = double(nf.i(:))';
+end
+end
+
+% -------------------------------------------------------------------------
+function s = wstr(e)
+% Readable node path, for error messages.
+if ~isfield(e, 'p') || isempty(e.p)
+    s = '<root>';
+    return
+end
+segs = e.p;
+if ~iscell(segs)
+    segs = num2cell(segs);
+end
+parts = cell(1, numel(segs));
+for k = 1:numel(segs)
+    if ischar(segs{k})
+        parts{k} = ['.' segs{k}];
+    else
+        parts{k} = sprintf('{%d}', double(segs{k}));
+    end
+end
+s = ['<root>' strjoin(parts, '')];
 end
 
 % -------------------------------------------------------------------------
@@ -264,9 +358,15 @@ if ~isstruct(nf) || ~isfield(nf, 'i') || ~isfield(nf, 'k')
 end
 ii = double(nf.i(:));
 kk = tocellstr(nf.k);
-for q = 1:min(numel(ii), numel(kk))
+if numel(ii) ~= numel(kk)
+    error('json:mloads:nf', ...
+        'info.nf at %s has %d indices but %d kinds.', wstr(e), numel(ii), numel(kk));
+end
+for q = 1:numel(ii)
     if ii(q) < 1 || ii(q) > numel(x)
-        continue
+        error('json:mloads:nf', ...
+            'info.nf at %s indexes element %g of a %d-element leaf.', ...
+            wstr(e), ii(q), numel(x));
     end
     switch kk{q}
         case 'NaN'
@@ -275,6 +375,9 @@ for q = 1:min(numel(ii), numel(kk))
             x(ii(q)) = Inf;
         case '-Inf'
             x(ii(q)) = -Inf;
+        otherwise
+            error('json:mloads:nf', ...
+                'info.nf at %s has unknown kind "%s".', wstr(e), kk{q});
     end
 end
 end
@@ -299,7 +402,13 @@ elseif isstruct(raw) && numel(raw) == n
     kids = reshape(num2cell(raw), 1, n);
 elseif n == 1
     kids = {raw};
-elseif isnumeric(raw) || islogical(raw)
+elseif isnumeric(raw) || islogical(raw) || isstruct(raw)
+    % jsondecode collapses a JSON array of like-shaped arrays into one N-D
+    % block: a numeric block for arrays of numbers, and a struct ARRAY for
+    % arrays of objects that happen to share a field set and a length. Either
+    % way the outermost JSON array became dimension 1, so restoring element
+    % order and splitting evenly handles both. Arrays of arrays of strings
+    % never collapse, so cells need no equivalent.
     flat = jsonorder(raw);
     if isempty(flat)
         kids = repmat({[]}, 1, n);
@@ -309,7 +418,10 @@ elseif isnumeric(raw) || islogical(raw)
             error('json:mloads:shape', ...
                 'Cannot split %d decoded values across %d elements.', numel(flat), n);
         end
-        kids = reshape(num2cell(reshape(flat, per, n), 1), 1, n);
+        kids = cell(1, n);
+        for k = 1:n
+            kids{k} = flat((k - 1) * per + 1:k * per);
+        end
     end
 else
     error('json:mloads:shape', ...
@@ -342,9 +454,15 @@ elseif iscell(raw)
     x = nan(numel(raw), 1);
     for k = 1:numel(raw)
         rk = raw{k};
-        if ~isempty(rk) && (isnumeric(rk) || islogical(rk))
-            x(k) = double(rk(1));
+        if isempty(rk)
+            continue        % a null slot; restore_nonfinite fills it in
         end
+        if ~(isnumeric(rk) || islogical(rk)) || ~isscalar(rk)
+            error('json:mloads:leaf', ...
+                'Numeric leaf element %d decoded to a %s of %d, not a number.', ...
+                k, class(rk), numel(rk));
+        end
+        x(k) = double(rk);
     end
 elseif isempty(raw)
     x = zeros(0, 1);
@@ -407,9 +525,10 @@ end
 end
 
 % -------------------------------------------------------------------------
-function y = str2int(s, cls)
+function y = str2int(s, cls, e)
 % Parse a decimal string into cls without going through double, so that
 % 64-bit integers above 2^53 (and intmin) survive exactly.
+raw = s;
 s = strtrim(s);
 neg = false;
 if ~isempty(s) && s(1) == '-'
@@ -417,6 +536,10 @@ if ~isempty(s) && s(1) == '-'
     s = s(2:end);
 elseif ~isempty(s) && s(1) == '+'
     s = s(2:end);
+end
+if isempty(s) || ~all(s >= '0' & s <= '9')
+    error('json:mloads:int', ...
+        'info.s at %s has "%s", which is not a decimal integer.', wstr(e), raw);
 end
 y   = zeros(1, 1, cls);
 ten = cast(10, cls);

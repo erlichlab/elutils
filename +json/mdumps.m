@@ -41,7 +41,13 @@ function out = mdumps(obj, varargin)
 inpd = @utils.inputordefault;
 args = varargin;
 [compress, args] = inpd('compress', false, args);
-[~, args]        = inpd('thorough', true, args);   % v1 option, now always on
+[thorough, args] = inpd('thorough', true, args);
+if ~isequal(thorough, true)
+    % The generic check below refuses unknown options for exactly this reason,
+    % so this one cannot silently do nothing either.
+    warning('json:mdumps:thorough', ...
+        'The thorough option is accepted for compatibility and ignored; encoding is always thorough.');
+end
 if ~isempty(args)
     % A mistyped option that silently does nothing is how you end up trusting
     % an uncompressed blob you thought was compressed.
@@ -61,7 +67,9 @@ TO.info  = info;
 out = jsonencode(TO);
 
 if compress
-    out = utils.zlibencode(out);
+    % zlibencode casts char with uint8(), which saturates: without the UTF-8
+    % conversion every code point above U+00FF would be stored as 255.
+    out = utils.zlibencode(unicode2native(out, 'UTF-8'));
 end
 
 end
@@ -87,7 +95,7 @@ switch cls
     case 'cell'
         e = entry(path, 'cell', d);
         n = numel(S);
-        Sc = reshape(S, 1, max(n, 0));
+        Sc = reshape(S, 1, n);
         kids = cell(1, n);
         kidinfo = cell(1, n);
         for k = 1:n
@@ -114,7 +122,7 @@ switch cls
             end
             info = [{e}, kidinfo{:}];
         else
-            Sc = reshape(S, 1, max(n, 0));
+            Sc = reshape(S, 1, n);
             kids = cell(1, n);
             kidinfo = cell(1, n * numel(f));
             c = 0;
@@ -242,9 +250,6 @@ e = struct();
 e.p = path;                            % cell of char (field) / double (index)
 e.t = t;
 e.d = reshape(double(d), 1, []);
-if isempty(path)
-    e.p = {};
-end
 end
 
 % -------------------------------------------------------------------------

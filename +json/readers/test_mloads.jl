@@ -193,6 +193,17 @@ end
         @test mloads(JSON.parse(wrapped)) == Inf
     end
 
+    # Stored as its struct() contents; info carries the real class name.
+    @testset "classdef object decodes as a struct" begin
+        got = decode("classdef_object")
+        @test collect(keys(got)) == ["alpha", "beta", "gamma"]
+        @test got["alpha"] == 7.0
+        @test got["beta"] == "two"
+        _, meta = mloads(JSON.parse(String(CASES["classdef_object"]["payload"]));
+                         with_meta = true)
+        @test meta[()].class == "test.json_testobj"
+    end
+
     @testset "struct field order is preserved" begin
         @test collect(keys(decode("struct_readme"))) == ["foo", "bar", "nerf"]
         @test collect(keys(decode("struct_mixed_fields"))) ==

@@ -121,7 +121,10 @@ fprintf('\n=== format-1 (legacy) regression ===\n');
 nv1 = 0; nv1fail = 0;
 fix = fullfile(fileparts(mfilename('fullpath')), 'fixtures', 'json_v1_golden.mat');
 if ~exist(fix, 'file')
-    fprintf(2, '  fixture %s not found, skipping\n', fix);
+    nv1fail = nv1fail + 1;
+    fprintf(2, ['  FAIL fixture %s not found. It holds payloads captured from the ', ...
+                'pre-v2 writer, which no longer exists in the tree, so it cannot be ', ...
+                'regenerated -- restore it from git rather than deleting it.\n'], fix);
 else
     F = load(fix);
     G = F.G;
@@ -132,6 +135,10 @@ else
         end
         idx = find(strcmp(all_cases(:, 1), G(g).name), 1);
         if isempty(idx)
+            % Renaming a case must not quietly shrink legacy coverage.
+            nv1fail = nv1fail + 1;
+            fprintf(2, ['  FAIL golden payload "%s" has no matching case in ', ...
+                        'test.json_cases\n'], G(g).name);
             continue
         end
         nv1 = nv1 + 1;
@@ -153,9 +160,8 @@ nfail = nfail + nv1fail;
 
 %% ---- non-standard JSON literals in legacy rows ----------------------
 % The pre-R2016b json.tojson mex wrote bare NaN/Infinity. Current jsondecode
-% accepts those as an extension, so such rows read natively and keep Inf
-% distinct from NaN -- which is exactly what v1's unconditional rewrite to
-% null destroyed.
+% accepts those as an extension, so such rows must read natively and keep Inf
+% distinct from NaN; rewriting those literals to null would lose that.
 fprintf('\n=== legacy NaN/Infinity literals ===\n');
 nlit = 0;
 lit = { 'bare_nan', ...
@@ -177,8 +183,8 @@ for k = 1:size(lit, 1)
     end
 end
 
-% A format-2 payload whose char data contains the word NaN must survive: v1
-% rewrote it unconditionally and corrupted the string.
+% A char field containing the word NaN must survive untouched, which is why
+% the literal rewrite only runs after a failed parse.
 try
     s = 'the value is NaN and Infinity';
     if ~strcmp(json.mloads(json.mdumps(s)), s)
@@ -235,20 +241,95 @@ ntot = size(bad, 1) + size(badtext, 1);
 fprintf('rejected inputs: %d/%d passed\n', ntot - nbad, ntot);
 nfail = nfail + nbad;
 
+%% ---- classdef objects are stored as their struct contents -----------
+% They deliberately come back as plain structs, so this cannot be a
+% round-trip case in test.json_cases.
+fprintf('\n=== classdef objects ===\n');
+nobj = 0;
+try
+    o = test.json_testobj(7);
+    j = json.mdumps(o);
+    D = jsondecode(j);
+    root = D.info(1);
+    if iscell(root), root = root{1}; end
+    assert(strcmp(root.t, 'test.json_testobj'), 'root class not recorded, got %s', root.t);
+    assert(strcmp(root.as, 'struct'), 'root missing as:struct');
+    b = json.mloads(j);
+    assert(isstruct(b), 'expected a struct back, got %s', class(b));
+    assert(isequal(fieldnames(b), {'alpha'; 'beta'; 'gamma'}), 'fields/order wrong');
+    assert(isequaln(b.alpha, 7) && strcmp(b.beta, 'two'), 'values wrong');
+    assert(isequaln(b.gamma, {3, [4 5]}), 'nested cell property wrong');
+catch me
+    nobj = nobj + 1;
+    fprintf(2, '  FAIL classdef object: %s\n', me.message);
+end
+fprintf('classdef objects: %d/1 passed\n', 1 - nobj);
+nfail = nfail + nobj;
+
+%% ---- malformed payloads must not decode to plausible data -----------
+% None of these can come from json.mdumps, but mloads reads whatever is in
+% the database -- a future writer, or a truncated MEDIUMTEXT column.
+fprintf('\n=== malformed payloads ===\n');
+bad2 = { ...
+  'order_C',        '{"fmt":2,"order":"C","base":1,"vals":[1,2,3,4,5,6],"info":[{"p":[],"t":"double","d":[2,3]}]}', 'json:mloads:order'; ...
+  'base_0',         '{"fmt":2,"order":"F","base":0,"vals":1,"info":[{"p":[],"t":"double","d":[1,1]}]}',            'json:mloads:base'; ...
+  'fmt_string',     '{"fmt":"2","vals":1,"info":[{"p":[],"t":"double","d":[1,1]}]}',                               'json:mloads:version'; ...
+  'leaf_too_short', '{"fmt":2,"vals":[1,2,3,4],"info":[{"p":[],"t":"double","d":[7,1]}]}',                         'json:mloads:shape'; ...
+  'leaf_too_long',  '{"fmt":2,"vals":[1,2,3],"info":[{"p":[],"t":"double","d":[1,2]}]}',                           'json:mloads:shape'; ...
+  'char_too_short', '{"fmt":2,"vals":"ab","info":[{"p":[],"t":"char","d":[2,3]}]}',                                'json:mloads:shape'; ...
+  'nf_out_of_range','{"fmt":2,"vals":[1,2],"info":[{"p":[],"t":"double","d":[1,2],"nf":{"i":[9],"k":["Inf"]}}]}',   'json:mloads:nf'; ...
+  'nf_bad_kind',    '{"fmt":2,"vals":[null],"info":[{"p":[],"t":"double","d":[1,1],"nf":{"i":[1],"k":["Bogus"]}}]}','json:mloads:nf'; ...
+  's_not_integer',  '{"fmt":2,"vals":[1500],"info":[{"p":[],"t":"int64","d":[1,1],"s":["1.5e3"]}]}',               'json:mloads:int'; ...
+  'info_too_long',  '{"fmt":2,"vals":1,"info":[{"p":[],"t":"double","d":[1,1]},{"p":[],"t":"double","d":[1,1]}]}',  'json:mloads:info'; ...
+  'array_of_v1',    '[{"vals":1,"info":{}},{"vals":2,"info":{}}]',                                                 'json:mloads:unrecognised'; ...
+  'string_array_in', string(["{}" "x"]),                                                                           'json:mloads:input' };
+nbad2 = 0;
+for k = 1:size(bad2, 1)
+    got = '';
+    try
+        json.mloads(bad2{k, 2});
+    catch me
+        got = me.identifier;
+    end
+    if ~strcmp(got, bad2{k, 3})
+        nbad2 = nbad2 + 1;
+        fprintf(2, '  FAIL %-18s expected %s, got "%s"\n', bad2{k, 1}, bad2{k, 3}, got);
+    end
+end
+
+% An ignored option must say so rather than silently doing nothing.
+warnstate = warning('off', 'json:mdumps:thorough');
+[~] = lastwarn('');
+json.mdumps(1, 'thorough', false);
+[~, wid] = lastwarn;
+warning(warnstate);
+if ~strcmp(wid, 'json:mdumps:thorough')
+    nbad2 = nbad2 + 1;
+    fprintf(2, '  FAIL thorough=false did not warn (got "%s")\n', wid);
+end
+
+fprintf('malformed payloads: %d/%d passed\n', size(bad2, 1) + 1 - nbad2, size(bad2, 1) + 1);
+nfail = nfail + nbad2;
+
 %% ---- compression path ------------------------------------------------
 fprintf('\n=== compression ===\n');
 ncomp = 0;
-try
-    A = test.json_cases();
-    v = A{find(strcmp(A(:, 1), 'struct_readme'), 1), 2};
-    z = json.mdumps(v, 'compress', true);
-    w = json.mloads(z);
-    assert(isequaln(v, w), 'compressed round-trip mismatch');
-    fprintf('compression: ok (%d bytes compressed)\n', numel(z));
-catch me
-    ncomp = 1;
-    fprintf(2, '  FAIL compression: %s\n', me.message);
+A = test.json_cases();
+for nm = {'struct_readme', 'char_unicode', 'combo_2', 'nonfinite_mix'}
+    try
+        v = A{find(strcmp(A(:, 1), nm{1}), 1), 2};
+        z = json.mdumps(v, 'compress', true);
+        assert(isa(z, 'uint8'), 'compressed output should be bytes, not text');
+        w = json.mloads(z);
+        assert(isequaln(v, w), 'compressed round-trip mismatch');
+        [ok, why] = strict_equal(v, w, '');
+        assert(ok, '%s', why);
+    catch me
+        ncomp = ncomp + 1;
+        fprintf(2, '  FAIL compression %-16s %s\n', nm{1}, me.message);
+    end
 end
+fprintf('compression: %d/4 passed\n', 4 - ncomp);
 nfail = nfail + ncomp;
 
 %% ---- report ---------------------------------------------------------

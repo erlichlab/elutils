@@ -138,6 +138,16 @@ expect("struct_no_fields", identical(decode("struct_no_fields"), list()))
 # a field literally named type__ collided with v1's metadata sentinel
 expect("struct_field_type__",
        identical(decode("struct_field_type__")$type__, "collides with v1 sentinel"))
+# Stored as its struct() contents; info carries the real class name.
+obj <- decode("classdef_object")
+expect("classdef object fields", identical(names(obj), c("alpha", "beta", "gamma")))
+expect("classdef object alpha", obj$alpha == 7)
+expect("classdef object beta", identical(obj$beta, "two"))
+expect("classdef object class in meta", {
+  mo <- suppressWarnings(mloads(CASES[["classdef_object"]]$payload, with_meta = TRUE))
+  identical(mo$meta[[1]]$class, "test.json_testobj")
+})
+
 expect("struct field order preserved",
        identical(names(decode("struct_readme")), c("foo", "bar", "nerf")))
 

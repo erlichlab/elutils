@@ -29,9 +29,13 @@ switch randi(10)
     case {5, 6}
         d = rand_dims();
         n = prod(d);
-        c = cell(1, n);
-        for k = 1:n
-            c{k} = test.json_randval(depth - 1);
+        if n > 1 && rand < 0.35
+            c = rand_similar_siblings(n, depth - 1);
+        else
+            c = cell(1, n);
+            for k = 1:n
+                c{k} = test.json_randval(depth - 1);
+            end
         end
         v = reshape(c, d);
 
@@ -43,38 +47,70 @@ switch randi(10)
         end
 
     case 9
-        % struct array: every element must carry the same fields in the same
-        % order, which is exactly what [elems{:}] requires below
-        f = rand_fields();
-        d = rand_dims();
-        n = prod(d);
-        if n == 0
-            args = cell(1, 2 * numel(f));
-            for k = 1:numel(f)
-                args{2 * k - 1} = f{k};
-                args{2 * k}     = {};
-            end
-            if isempty(f)
-                v = reshape(struct([]), d);
-            else
-                v = reshape(struct(args{:}), d);
-            end
-        else
-            elems = cell(1, n);
-            for k = 1:n
-                e = struct();
-                for fx = 1:numel(f)
-                    e.(f{fx}) = test.json_randval(depth - 1);
-                end
-                elems{k} = e;
-            end
-            v = reshape([elems{:}], d);
-        end
+        v = make_struct_array(rand_fields(), rand_dims(), depth - 1);
 
     case 10
         v = rand_leaf();
 end
 
+end
+
+% -------------------------------------------------------------------------
+function c = rand_similar_siblings(n, depth)
+% Siblings drawn from ONE template, because that is what makes jsondecode
+% collapse a JSON array of arrays into a single N-D block: equal-length struct
+% arrays with matching fields become one struct array, equal-length numeric
+% arrays one numeric block. Independent draws produce that shape roughly once
+% in a thousand values, which is too rare for a fuzzer to rely on, so generate
+% it on purpose.
+c    = cell(1, n);
+f    = rand_fields();
+dd   = rand_dims();
+m    = prod(dd);
+kind = randi(3);
+for k = 1:n
+    switch kind
+        case 1
+            c{k} = make_struct_array(f, dd, depth);
+        case 2
+            inner = cell(1, m);
+            for q = 1:m
+                inner{q} = test.json_randval(max(depth - 1, 0));
+            end
+            c{k} = reshape(inner, dd);
+        case 3
+            c{k} = reshape(randn(1, m), dd);
+    end
+end
+end
+
+% -------------------------------------------------------------------------
+function v = make_struct_array(f, d, depth)
+% Every element carries the same fields in the same order, which is what
+% [elems{:}] below requires.
+n = prod(d);
+if n == 0
+    if isempty(f)
+        v = reshape(struct([]), d);
+        return
+    end
+    args = cell(1, 2 * numel(f));
+    for k = 1:numel(f)
+        args{2 * k - 1} = f{k};
+        args{2 * k}     = {};
+    end
+    v = reshape(struct(args{:}), d);
+    return
+end
+elems = cell(1, n);
+for k = 1:n
+    e = struct();
+    for fx = 1:numel(f)
+        e.(f{fx}) = test.json_randval(depth);
+    end
+    elems{k} = e;
+end
+v = reshape([elems{:}], d);
 end
 
 % -------------------------------------------------------------------------
@@ -96,10 +132,19 @@ end
 
 % -------------------------------------------------------------------------
 function f = rand_fields()
-% Includes type__ and dim__ on purpose: they were metadata sentinels in v1 and
-% a field with either name must survive.
-pool = {'a', 'b', 'c', 'x1', 'value', 'type__', 'dim__', 'data', 'meta', 'n'};
-k = randi(4) - 1;              % 0..3 fields; 0 exercises the fieldless struct
+% Mostly a two-name pool, so sibling struct arrays can actually end up with
+% the same field set AND the same length -- the shape that makes jsondecode
+% collapse them into one N-D struct array. Drawing from ten names instead made
+% a collision so unlikely the fuzzer never reached that path.
+%
+% The wider pool still appears sometimes; it carries type__ and dim__, which
+% were metadata sentinels in v1 and must survive as ordinary field names.
+if rand < 0.8
+    pool = {'a', 'b'};
+else
+    pool = {'a', 'b', 'c', 'x1', 'value', 'type__', 'dim__', 'data', 'meta', 'n'};
+end
+k = min(randi(4) - 1, numel(pool));   % 0..3 fields; 0 is the fieldless struct
 f = pool(randperm(numel(pool), k));
 end
 
