@@ -87,37 +87,25 @@ it cannot see the very type bugs this format exists to prevent.
 
 ## The mex files
 
-The following are compiled binaries from code in
-[christianpanton/matlab-json](https://github.com/christianpanton/matlab-json.git).
-`json.mloads` only falls back to them when `jsondecode` cannot parse the text at
-all; nothing in format 2 needs them.
+`fromjson.mex*`, `tojson.mex*` and `setjsonfield.mex*` are compiled binaries
+from [christianpanton/matlab-json](https://github.com/christianpanton/matlab-json.git),
+with supporting libraries in `jsonlibs` built from
+[json-c/json-c](https://github.com/json-c/json-c). They existed because MATLAB
+had no JSON support at all before R2016b.
 
-**There is no `mexmaca64` build, so on Apple Silicon these do not exist at
-all** — only `mexa64` (Linux x86), `mexmaci64` (Intel Mac) and the Windows
-builds are shipped. In practice that costs nothing: the non-standard bare
-`NaN`/`Infinity` literals the old `json.tojson` wrote are accepted by current
-`jsondecode` as an extension, so those rows read natively. If you do hit a
-payload that needs a real fallback on an ARM Mac, `json.mloads` says so
-explicitly instead of failing with an undefined-function error.
+**Nothing in this package calls them any more.** `json.mloads` and
+`json.mdumps` use `jsondecode`/`jsonencode` exclusively. They are kept only so
+that any outside code still calling `json.tojson` or `json.fromjson` directly
+keeps working, and they are candidates for deletion.
 
-* `fromjson.mex*`
-* `setjsonfield.mex*`
-* `tojson.mex*`
+Two reasons not to rely on them:
 
-The libraries in `jsonlib` are compiled from code in
-[json-c/json-c](https://github.com/json-c/json-c). To use the mex functions you
-must copy (or symlink) the libraries in `jsonlibs` to the appropriate place.
+* There is no `mexmaca64` build — only `mexa64` (Linux x86), `mexmaci64`
+  (Intel Mac) and the Windows ones — so on Apple Silicon these functions do
+  not resolve at all.
+* They need their json-c libraries copied somewhere the loader will find them
+  (`jsonlibs/maci64` → `/usr/local/lib`, `jsonlibs/amd64` → `/usr/lib`).
 
-For mac
-
-```bash
-cd jsonlib/maci64
-sudo cp * /usr/local/lib
-```
-
-For linux
-
-```bash
-cd jsonlib/amd64
-sudo cp * /usr/lib
-```
+`jsondecode` reads everything these ever wrote, including the non-standard
+bare `NaN`/`Infinity` literals, so there is no payload in the database that
+needs them.

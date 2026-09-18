@@ -12,12 +12,12 @@ function out = mloads(jstr, varargin)
 % automatically. Legacy payloads are handed to json.mloads_v1 unchanged, so
 % historical rows decode exactly as they always have.
 %
-% Current jsondecode accepts bare NaN / Infinity / -Infinity as an extension,
-% so the oldest rows -- written by json.tojson before jsondecode existed --
-% read natively with Inf still distinct from NaN. A rewrite of those literals
-% is kept as a fallback for stricter parsers, but it runs only when the text
-% fails to parse, so a string value that merely *contains* the word NaN is no
-% longer corrupted.
+% Decoding is jsondecode only. It accepts bare NaN / Infinity / -Infinity as
+% an extension, so even the oldest rows -- written by the json.tojson mex
+% before jsondecode existed -- read natively, with Inf still distinct from
+% NaN. A rewrite of those literals is kept for a MATLAB old enough to reject
+% them, but it runs only when the text fails to parse, so a string value that
+% merely *contains* the word NaN is no longer corrupted.
 %
 % OPTIONS
 %   decompress   force zlib decompression on/off. By default it is inferred:
@@ -54,7 +54,7 @@ if decompress
 end
 jstr = reshape(jstr, 1, numel(jstr));
 
-[J, builtin_flag] = decode_any(jstr);
+J = decode_json(jstr);
 
 if isstruct(J) && isscalar(J) && isfield(J, 'fmt') && isfield(J, 'vals') && isfield(J, 'info')
     fmt = double(J.fmt);
@@ -64,7 +64,7 @@ if isstruct(J) && isscalar(J) && isfield(J, 'fmt') && isfield(J, 'vals') && isfi
     end
     out = build_v2(J);
 elseif isstruct(J) && isfield(J, 'vals') && isfield(J, 'info')
-    out = json.mloads_v1(J, builtin_flag);
+    out = json.mloads_v1(J);
 else
     error('json:mloads:unrecognised', ...
         ['Not a json.mdumps payload (decoded to a %s with no vals/info). ', ...
@@ -74,12 +74,7 @@ end
 end
 
 % =========================================================================
-function [J, builtin_flag] = decode_any(jstr)
-% Decode, preferring the built-in. Only if the text is not valid JSON do we
-% rewrite non-standard NaN/Infinity literals, then fall back to the mex
-% decoder. Doing the rewrite last is what keeps string payloads intact.
-
-builtin_flag = true;
+function J = decode_json(jstr)
 
 try
     J = jsondecode(jstr);
@@ -87,13 +82,13 @@ try
 catch strict_err
 end
 
-% Non-standard literals, for producers jsondecode will not take. Current
-% releases accept bare NaN/Infinity/Inf (though not lowercase nan/inf), so this
-% rarely fires; it is a fallback for older MATLAB and for other writers.
+% Rescue for the non-standard NaN / Infinity literals the pre-jsondecode mex
+% encoder wrote. Current releases parse those natively, keeping Inf distinct
+% from NaN, so this only fires on a MATLAB old enough to reject them.
 %
-% Two reasons it runs only after a parse failure rather than up front, which is
-% what v1 did: a string value containing the word NaN stays intact, and a bare
-% Infinity that jsondecode would have read as Inf is not flattened to null.
+% It runs after the parse attempt rather than before, which is what v1 did
+% unconditionally: a string value containing the word NaN stays intact, and a
+% bare Infinity that jsondecode can read is never flattened to null.
 fixed = regexprep(jstr, '(-?)\<Infinity\>', 'null');
 fixed = regexprep(fixed, '\<NaN\>', 'null');
 try
@@ -102,21 +97,9 @@ try
 catch
 end
 
-try
-    J = json.fromjson(jstr);
-    builtin_flag = false;
-catch mex_err
-    if strcmp(mex_err.identifier, 'MATLAB:undefinedVarOrClass')
-        % No mexmaca64 is shipped, so on Apple Silicon there is no fallback.
-        % Report the actual problem instead of a missing-function error.
-        error('json:mloads:invalidjson', ...
-            ['Cannot parse this payload as JSON, and the json.fromjson mex ' ...
-             'fallback is not built for %s (this repo ships mexa64, mexmaci64, ' ...
-             'mexw32 and mexw64 only).\n  jsondecode said: %s\n  payload starts: %s'], ...
-            mexext, strict_err.message, snippet(jstr));
-    end
-    rethrow(mex_err)
-end
+error('json:mloads:invalidjson', ...
+    'Cannot parse this payload as JSON.\n  jsondecode said: %s\n  payload starts: %s', ...
+    strict_err.message, snippet(jstr));
 
 end
 

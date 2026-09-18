@@ -1,18 +1,15 @@
-function out = mloads_v1(bigJ, builtin_flag)
-% out = json.mloads_v1(bigJ, builtin_flag)
+function out = mloads_v1(bigJ)
+% out = json.mloads_v1(bigJ)
 %
 % FROZEN legacy reader for format-1 payloads -- the {"vals":..., "info":...}
 % shape written by json.mdumps before 2026. It exists so that rows already
 % sitting in the database keep decoding exactly as they always have.
 %
-% The two reconstruction functions below are spliced VERBATIM from the
-% pre-v2 json/mloads.m (commit 24221a1). Do not edit them: their job is to
-% reproduce the old behaviour, bugs included. New work goes in json.mloads.
+% BIGJ is the payload after jsondecode, with .vals and .info.
 %
-% BIGJ          already-decoded payload with .vals and .info
-% BUILTIN_FLAG  true if bigJ came from jsondecode, false if from
-%               json.fromjson (the two decoders return different MATLAB
-%               shapes, hence the two reconstruction paths)
+% The reconstruction function below is spliced VERBATIM from the pre-v2
+% json/mloads.m. Do not edit it: its job is to reproduce the old behaviour,
+% bugs included. New work goes in json.mloads.
 %
 % json.mloads dispatches here automatically, so you only need to call this
 % directly when debugging an old payload.
@@ -23,73 +20,16 @@ function out = mloads_v1(bigJ, builtin_flag)
 %   * 2-D char arrays come back with the wrong shape
 %   * cell-of-cell and equal-length cell-of-matrix raise errors
 %   * a struct field named type__ or dim__ collides with the sentinels
-%   * N-D arrays are truncated to 2 dimensions on the fromjson path
 %
 % See also json.mloads, json.mdumps
 
-if nargin < 2
-    builtin_flag = true;
-end
-
-out  = bigJ.vals;
-meta = bigJ.info;
-
-if builtin_flag
-    out = applyinfo_bi(out, meta);
-else
-    out = applyinfo(out, meta);
-end
+out = applyinfo_bi(bigJ.vals, bigJ.info);
 
 end
 
 % =========================================================================
 % ---- everything below this line is verbatim pre-v2 code -----------------
 % =========================================================================
-
-function vals = applyinfo(vals, meta)
-    
-    if isfield(meta,'type__')
-        % Then we are a leaf node
-        tsize =double([meta.dim__{1} meta.dim__{2}]);
-        tnumel = prod(tsize);
-        switch(meta.type__)
-        case {'cell', 'struct'}
-            for cx = 1:tnumel
-                vals{cx} = applyinfo(vals{cx}, meta.cell__{cx});
-            end
-            if strcmp(meta.type__, 'struct') % This is a struct array
-                vals = [vals{:}];
-            end
-            vals = reshape(vals, tsize);
-            
-        case 'char'
-            vals = char(vals);
-        case 'double'
-            if tnumel == 1
-                vals = double(vals);
-            else
-                vals = double([vals{:}]);
-                vals = reshape(vals, tsize);
-            end
-        otherwise
-            f = @(x) cast(x, meta.type__);
-            if tnumel == 1 || strcmp(meta.type__, 'char')
-                vals = f(vals);
-            else
-                 vals = cellfun(f, vals);
-              %  vals = cell2mat(vals);
-                 vals = reshape(vals, tsize);
-            end
-
-        end
-    else
-        fnames = fieldnames(meta);
-        for fx = 1:numel(fnames)
-            vals.(fnames{fx}) = applyinfo(vals.(fnames{fx}), meta.(fnames{fx}));
-        end 
-    end
-end
-
 
 function vals = applyinfo_bi(vals, meta)
     if iscell(meta)

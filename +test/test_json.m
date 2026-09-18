@@ -212,7 +212,27 @@ for k = 1:size(bad, 1)
         fprintf(2, '  FAIL %-22s was accepted but should have errored\n', bad{k, 1});
     end
 end
-fprintf('rejected inputs: %d/%d passed\n', size(bad, 1) - nbad, size(bad, 1));
+
+% Unreadable input must name the real problem. There is no mex fallback any
+% more, so the only thing to report is that the text is not JSON.
+badtext = { 'not_json',      '{"vals":[1,2,  not json at all', 'json:mloads:invalidjson'; ...
+            'plain_json',    '{"a":1,"b":2}',                  'json:mloads:unrecognised'; ...
+            'future_format', '{"fmt":9,"vals":1,"info":[]}',    'json:mloads:version' };
+for k = 1:size(badtext, 1)
+    got = '';
+    try
+        json.mloads(badtext{k, 2});
+    catch me
+        got = me.identifier;
+    end
+    if ~strcmp(got, badtext{k, 3})
+        nbad = nbad + 1;
+        fprintf(2, '  FAIL %-22s expected %s, got "%s"\n', ...
+            badtext{k, 1}, badtext{k, 3}, got);
+    end
+end
+ntot = size(bad, 1) + size(badtext, 1);
+fprintf('rejected inputs: %d/%d passed\n', ntot - nbad, ntot);
 nfail = nfail + nbad;
 
 %% ---- compression path ------------------------------------------------
