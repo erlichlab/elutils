@@ -8,6 +8,7 @@ classdef zmqhelper < handle
         socket
         subscriptions
         service
+        context
     end
     
     methods
@@ -23,28 +24,47 @@ classdef zmqhelper < handle
             obj.url = inpd('url', [], varargin);
             obj.subscriptions = inpd('subscriptions', [], varargin);
             obj.service = inpd('service', 'zmq', varargin);
+            dobind  = inpd('bind', [], varargin);
+            linger  = inpd('linger', 1000, varargin);
+            verbose = inpd('verbose', true, varargin);
 
             configsocktype = obj.socktype;
             
             if isempty(obj.url)
                 obj.url = net.zmqhelper.loadconf(configsocktype, 'service' ,obj.service);
             end
-            
-            fprintf('Creating a %s socket at %s\n', obj.socktype, obj.url);
+
+            if isempty(dobind)
+                % Only pull has ever bound: the other types talk to a broker
+                % that binds on our behalf. Pass 'bind', true to serve
+                % directly instead -- a pub with no broker, or the rep end of
+                % a req/rep pair.
+                dobind = strcmpi(obj.socktype, 'pull');
+            end
+            if dobind
+                action = 'binding';
+            else
+                action = 'connecting';
+            end
+
+            if verbose
+                fprintf('Creating a %s socket %s to %s\n', obj.socktype, action, obj.url);
+            end
 
             import org.zeromq.ZMQ;
-            context = ZMQ.context(1);
-            obj.socket = context.socket(ZMQ.(upper(obj.socktype)));
+            obj.context = ZMQ.context(1);
+            obj.socket = obj.context.socket(ZMQ.(upper(obj.socktype)));
             %obj.socket.HEARTBEAT_INTERVAL = 60000; % seems not available in jeromq
 
-            if obj.socktype == "pull"
-                % for pull sockets we bind to the url
+            % zmq lingers forever by default, so a close() with an
+            % undelivered message would hang MATLAB rather than return.
+            obj.socket.setLinger(linger);
+
+            if dobind
                 obj.socket.bind(obj.url);
             else
-                % for push, pub, sub, and req sockets we connect to the url
                 obj.socket.connect(obj.url);
             end
-            % This assumes you want to use connect. if you want to bind... you are an advanced user. Do it yourself.
             if ~isempty(obj.subscriptions)
                 for sx = 1:numel(obj.subscriptions)
                     obj.socket.subscribe(uint8(obj.subscriptions{sx}));
@@ -76,13 +96,25 @@ classdef zmqhelper < handle
 
         function [key,val] = recvkv_simple(obj)
             % receive a key value pair where the value is a json encoded string
+            % Empty means nothing was queued, as with recvmsg/recvjson -- a
+            % quiet socket is not an error.
+            key = [];
+            val = [];
             out = char(obj.socket.recvStr(1)); % The one gets msg without blocking
+            if isempty(out)
+                return
+            end
             [key, tval] = strtok(out, ' ');
             val = jsondecode(tval(2:end));
         end
         
         function [key, val] = recvkv(obj)
+            key = [];
+            val = [];
             out = char(obj.socket.recvStr(1)); % The one gets msg without blocking
+            if isempty(out)
+                return
+            end
             [key, tval] = strtok(out, ' ');
             val = json.mloads(tval(2:end));
         end
@@ -126,6 +158,28 @@ classdef zmqhelper < handle
         function out = waitfordata(obj)
             out = obj.socket.recv(); % The one gets msg with blocking
         end
+
+        function close(obj)
+            % Close the socket and terminate its context. Idempotent.
+            % Nothing used to call this, so every zmqhelper left behind a
+            % socket holding its port and a context running an I/O thread.
+            if ~isempty(obj.socket)
+                try %#ok<TRYNC>
+                    obj.socket.close();
+                end
+                obj.socket = [];
+            end
+            if ~isempty(obj.context)
+                try %#ok<TRYNC>
+                    obj.context.term();
+                end
+                obj.context = [];
+            end
+        end
+
+        function delete(obj)
+            obj.close();
+        end
         
     end
     
@@ -164,7 +218,7 @@ classdef zmqhelper < handle
         function zpub = getPublisher()
             % all publishers can share one publisher.
             persistent localpub;
-            if isempty(localpub)
+            if isempty(localpub) || ~isvalid(localpub) || isempty(localpub.socket)
                 localpub = net.zmqhelper('type','pub');
             end
             zpub = localpub;
@@ -176,7 +230,7 @@ classdef zmqhelper < handle
         function zpub = getPusher(varargin)
             % all publishers can share one publisher
             persistent localpush;
-            if isempty(localpush)
+            if isempty(localpush) || ~isvalid(localpush) || isempty(localpush.socket)
                 localpush = net.zmqhelper('type','push');
             end
             zpub = localpush;
