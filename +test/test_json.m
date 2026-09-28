@@ -1,5 +1,8 @@
 function varargout = test_json(varargin)
-% results = test.test_json(['verbose', tf], ['only', 'name'])
+% results = test.test_json(['verbose', tf], ['only', 'substring'])
+%
+% 'only' runs every case whose name contains the substring, and errors
+% if none does -- a mistyped filter must not report a green run.
 %
 % Round-trip test for json.mdumps / json.mloads.
 %
@@ -30,9 +33,7 @@ if ~isempty(args)
 end
 
 cases = test.json_cases();
-if ~isempty(only)
-    cases = cases(contains(cases(:, 1), only), :);
-end
+cases = filtercases(cases, only);
 n = size(cases, 1);
 
 R = repmat(struct('name', '', 'ok', false, 'why', '', 'bytes', 0), 1, n);
@@ -336,6 +337,26 @@ end
 fprintf('compression: %d/%d passed (%d bytes compressed)\n', n - ncomp, n, ztot);
 nfail = nfail + ncomp;
 
+%% ---- the harness itself ----------------------------------------------
+% The 'only' filter is the one part of this file that can turn a red run
+% green, so it gets a check of its own. It drives the filter directly
+% rather than re-running the suite: a suite that re-runs itself recurses
+% without bound the moment the guard being tested stops working.
+fprintf('\n=== harness ===\n');
+nharn = 0;
+gotid = '';
+try
+    filtercases({'alpha', 1; 'beta', 2}, 'nosuchcasename');
+catch me
+    gotid = me.identifier;
+end
+if ~strcmp(gotid, 'test:json:nomatch')
+    nharn = nharn + 1;
+    fprintf(2, '  FAIL mistyped ''only'' raised "%s", want test:json:nomatch\n', gotid);
+end
+fprintf('harness: %d/1 passed\n', 1 - nharn);
+nfail = nfail + nharn;
+
 %% ---- report ---------------------------------------------------------
 tot = sum([R.bytes]);
 fprintf('\n=== summary ===\n');
@@ -351,6 +372,17 @@ fprintf('ALL JSON TESTS PASSED\n');
 end
 
 % =========================================================================
+function cases = filtercases(cases, only)
+% Keep every case whose name contains the substring. A name that matches
+% nothing is an error: a filtered CI run must not go green just because a
+% case was renamed.
+if isempty(only)
+    return
+end
+cases = cases(contains(cases(:, 1), only), :);
+assert(~isempty(cases), 'test:json:nomatch', 'no case name contains "%s"', only);
+end
+
 function [tf, why] = strict_equal(a, b, path)
 % Recursive class + size + field-order + value comparison. Stricter than
 % isequaln, which happily equates 1 with true and int8(1) with 1, and which
